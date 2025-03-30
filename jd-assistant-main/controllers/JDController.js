@@ -43,6 +43,14 @@ exports.renderJDView = async (req, res) => {
  */
 exports.generateQuestion = async (req, res) => {
     try {
+        // Check if API key exists and is valid
+        if (!process.env.GEN_API_KEY || process.env.GEN_API_KEY === '') {
+            return res.status(401).json({ 
+                error: 'API Key is not set. Please provide a valid API key.',
+                requireApiKey: true
+            });
+        }
+
         let { jdText, interviewLanguage } = req.body;
         // Nếu người dùng upload file PDF thì ưu tiên đọc nội dung từ file
         if (req.file) {
@@ -79,7 +87,7 @@ exports.generateQuestion = async (req, res) => {
         const targetLanguage = languageMap[interviewLanguage] || 'English';
 
         // Khởi tạo Google Generative AI client với API key
-        const genAI = new GoogleGenerativeAI(GEN_API_KEY);
+        const genAI = new GoogleGenerativeAI(process.env.GEN_API_KEY);
         const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
         // Tạo prompt dùng một template duy nhất:
@@ -106,6 +114,12 @@ exports.generateQuestion = async (req, res) => {
         res.json({ question: htmlContent, jdText });
     } catch (error) {
         console.error('Error generating question:', error);
+        if (error.status === 403) {
+            return res.status(401).json({ 
+                error: 'Invalid API Key. Please provide a valid API key.',
+                requireApiKey: true
+            });
+        }
         res.status(500).json({ error: 'Failed to generate question.' });
     }
 };
@@ -123,8 +137,16 @@ exports.evaluateAnswer = async (req, res) => {
             return res.status(400).json({ error: 'JD, câu hỏi và câu trả lời đều là bắt buộc.' });
         }
 
+        // Check if API key exists and is valid
+        if (!process.env.GEN_API_KEY || process.env.GEN_API_KEY === '') {
+            return res.status(401).json({ 
+                error: 'API Key is not set. Please provide a valid API key.',
+                requireApiKey: true
+            });
+        }
+
         // Khởi tạo Google Generative AI client với API key
-        const genAI = new GoogleGenerativeAI(GEN_API_KEY);
+        const genAI = new GoogleGenerativeAI(process.env.GEN_API_KEY);
         const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
         // Tạo prompt đánh giá dựa trên JD, câu hỏi đã tạo và câu trả lời của ứng viên.
@@ -155,6 +177,12 @@ exports.evaluateAnswer = async (req, res) => {
         res.json({ evaluation: htmlContent });
     } catch (error) {
         console.error('Error evaluating answer:', error);
+        if (error.status === 403) {
+            return res.status(401).json({ 
+                error: 'Invalid API Key. Please provide a valid API key.',
+                requireApiKey: true
+            });
+        }
         res.status(500).json({ error: 'Failed to evaluate answer.' });
     }
 };
