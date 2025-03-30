@@ -1,12 +1,46 @@
 {
-  "name": "interview_assistant",
+  "name": "jd-assistant",
   "version": "1.0.0",
-  "description": "Interview_Assistant là một ứng dụng web giúp tạo ra các câu hỏi phỏng vấn dựa trên mô tả công việc (JD). Ứng dụng sử dụng Google Generative AI để tạo câu hỏi và đánh giá câu trả lời của ứng viên. Công cụ này không chỉ dành cho lập trình mà còn phù hợp với mọi lĩnh vực khác nhau.",
-  "main": "index.js",
+  "main": "server.js",
+  "bin": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "pm2": "pm2 start server.js --name jdassistant --env production",
+    "stoppm2": "pm2 stop server.js",
+    "build:mac": "npx pkg . --targets node18-macos-x64 --output dist/jd-assistant-mac && cp -r views dist/ && cp -r public dist/",
+    "build:win": "npx pkg . --targets node18-win-x64 --output dist/jd-assistant-win && cp -r views dist/ && cp -r public dist/",
+    "build": "npm run build:mac && npm run build:win"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "pkg": {
+    "assets": [
+      "views/**/*",
+      "public/**/*",
+      ".env",
+      "node_modules/ejs/**/*"
+    ],
+    "scripts": [
+      "server.js",
+      "controllers/**/*.js",
+      "routes/**/*.js",
+      "views/**/*.ejs"
+    ],
+    "options": [
+      "experimental-modules"
+    ]
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.0",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.7",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "marked": "^15.0.7",
+    "multer": "^1.4.5-lts.2",
+    "nodemon": "^3.1.9",
+    "pdf-parse": "^1.1.1"
+  },
+  "devDependencies": {
+    "pkg": "^5.8.1"
+  }
 }
