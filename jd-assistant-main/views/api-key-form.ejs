@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Key Required</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="api-key-form">
+            <p><%= message %></p>
+            <form action="/submit-api-key" method="POST">
+                <div class="form-group">
+                    <input type="text" name="apiKey" class="form-control" placeholder="Enter your API Key" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

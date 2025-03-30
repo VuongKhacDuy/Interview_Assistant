@@ -1,0 +1,12 @@
+{
+  "name": "interview_assistant",
+  "version": "1.0.0",
+  "description": "Interview_Assistant là một ứng dụng web giúp tạo ra các câu hỏi phỏng vấn dựa trên mô tả công việc (JD). Ứng dụng sử dụng Google Generative AI để tạo câu hỏi và đánh giá câu trả lời của ứng viên. Công cụ này không chỉ dành cho lập trình mà còn phù hợp với mọi lĩnh vực khác nhau.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
