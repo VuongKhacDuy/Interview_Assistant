@@ -54,6 +54,7 @@ Interview_Assistant là một ứng dụng web giúp tạo ra các câu hỏi ph
 
 ```
 jd-assistant/
+├── dist/                     // file run của mac và win
 ├── controllers/
 │   └── JDController.js       // Xử lý logic tạo câu hỏi và đánh giá câu trả lời
 ├── routes/
@@ -106,6 +107,12 @@ npm run pm2
 npm run stoppm2
 ```
 
+
+### Chạy với file trong dist 
+
+jd-assistant-mac cho MacOS
+jd-assistant-win.exe cho win
+
 ## Cách Sử Dụng
 
 1. **Mở trang web:** Sau khi chạy server, mở trình duyệt và truy cập [http://localhost:3000/](http://localhost:3000/).
@@ -132,10 +139,6 @@ Trong file `package.json`, bạn có các scripts sau:
 * **dev:** Chạy ứng dụng trong chế độ phát triển sử dụng nodemon để tự động reload.
 * **pm2:** Chạy ứng dụng sử dụng PM2 cho môi trường production.
 * **stoppm2:** Dừng ứng dụng đang chạy bằng PM2.
-
-## Liên Hệ
-
-Nếu có bất kỳ thắc mắc nào, vui lòng để lại comment hoặc liên hệ qua hoaphamduc2399@gmail.com.
 
 ---
 
