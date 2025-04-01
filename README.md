@@ -68,7 +68,7 @@ jd-assistant/
 └── README.md                 // Hướng dẫn cài đặt và sử dụng ứng dụng
 ```
 
-## Cấu Hình
+<!-- ## Cấu Hình
 
 Tạo file `.env` ở thư mục gốc và thêm thông tin sau:
 
@@ -77,7 +77,7 @@ GEN_API_KEY=your_google_api_key_here
 PORT=3000
 ```
 
-> **Chú ý:** Thay `your_google_api_key_here` bằng API key của bạn. API key lây tại đây https://aistudio.google.com/apikey
+> **Chú ý:** Thay `your_google_api_key_here` bằng API key của bạn. API key lây tại đây https://aistudio.google.com/apikey -->
 
 ## Chạy Ứng Dụng
 
@@ -94,18 +94,18 @@ npm start
 ```bash
 npm run dev
 ```
-
+<!-- 
 ### Chạy với PM2 (trong môi trường production)
 
 ```bash
 npm run pm2
-```
-
+``` -->
+<!-- 
 Để dừng PM2, sử dụng:
 
 ```bash
 npm run stoppm2
-```
+``` -->
 
 
 ### Chạy với file trong dist 

@@ -85,7 +85,7 @@ exports.generateQuestion = async (req, res) => {
         const prompt = `Bạn là trợ lý tạo câu hỏi phỏng vấn dựa trên mô tả công việc (JD) dưới đây.
         Trước tiên, hãy kiểm tra xem nội dung đầu vào có chứa các yếu tố đặc trưng của một mô tả công việc (ví dụ: nhiệm vụ, trách nhiệm, yêu cầu chuyên môn, kỹ năng cần có, …) không.
         - Nếu không, hãy trả lời: "Đầu vào không phải là mô tả công việc (JD)".
-        - Nếu hợp lệ, hãy gợi ý một số câu hỏi phỏng vấn phù hợp với lĩnh vực đó, sau đó chọn ra một câu hỏi để người dùng trả lời (nếu JD về lập trình thì có thể hỏi về code).
+        - Nếu hợp lệ, hãy gợi ý một số câu hỏi phỏng vấn phù hợp với lĩnh vực đó phù hợp với số năm kinh nghiệm và trình độ trong JD, sau đó chọn ra một câu hỏi để người dùng trả lời (nếu JD về lập trình thì có thể hỏi về code, các câu hỏi thuật toán và giải thuật theo cấp độ phù hợp với yêu cầu số năm kinh nghiệm trong JD).
         Ngôn ngữ trả lời: ${targetLanguage}.
 
         -----------------------
