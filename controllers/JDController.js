@@ -176,3 +176,52 @@ exports.evaluateAnswer = async (req, res) => {
         res.status(500).json({ error: 'Failed to evaluate answer.' });
     }
 };
+
+exports.generateGuidance = async (req, res) => {
+    try {
+        const apiKey = req.cookies?.apiKey;
+        if (!apiKey) {
+            return res.render('jd', {
+                title: 'JD Assistant',
+                showApiKeyForm: true,
+                message: 'You need to enter Google API Key to use the application. Follow these steps:\n\n1. Go to https://aistudio.google.com/apikey\n2. Log in to your Google account\n3. Create a new API Key\n4. Copy and paste the API Key into the form below'
+            });
+        }
+
+        const { jdText, question } = req.body;
+        if (!jdText || !question) {
+            return res.status(400).json({ error: 'JD and question are required.' });
+        }
+
+        // Initialize GenAI with the API key from cookies
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+
+        // Create a prompt to generate guidance on how to answer the interview question
+        const prompt = `You are an expert interview coach. Based on the following job description (JD) and interview question, provide guidance on how to effectively answer this question.
+
+            JD: ${jdText}
+
+            Interview Question: ${question}
+
+            Please provide:
+            1. A structured approach to answering this question
+            2. Key points that should be included in the answer
+            3. Common mistakes to avoid
+            4. Examples or frameworks that could be used (if applicable)
+            5. How to tailor the answer to highlight relevant skills from the JD
+
+            Format your response in a clear, concise manner with bullet points and sections.`;
+
+        // Call Google Generative AI API to get guidance
+        const result = await model.generateContent(prompt);
+        const rawMarkdown = result?.response?.candidates?.[0]?.content?.parts?.map(part => part.text).join('') || 'No response from AI.';
+        const htmlContent = marked(rawMarkdown);
+
+        // Return the guidance
+        res.json({ guidance: htmlContent });
+    } catch (error) {
+        console.error('Error generating guidance:', error);
+        res.status(500).json({ error: 'Failed to generate guidance.' });
+    }
+};
