@@ -133,39 +133,98 @@ class AIService {
      * @returns {string} HTML content with the evaluation
      */
     async evaluateAnswer(jdText, question, answer) {
-        const prompt = `You are an experienced and very demanding HR professional, tasked with evaluating in detail the candidate's responses to the single interview question below, created based on the job description (JD).
-
+        const prompt = `You are an experienced and very demanding HR professional. Evaluate the candidate's response to the interview question based on the job description (JD).
+            
             JD: ${jdText}
+            Interview Question: ${question}
+            Candidate's Answer: ${answer}
 
-            Interview questions: ${question}
+            Provide your evaluation in the following JSON format:
+            {
+                "score": number (0-10),
+                "relevance": "assessment of answer's relevance to JD and question",
+                "strengths": ["list", "of", "strengths"],
+                "weaknesses": ["list", "of", "weaknesses"],
+                "detailedFeedback": {
+                    "clarity": {
+                        "score": number (0-10),
+                        "comments": "evaluation of answer clarity"
+                    },
+                    "content": {
+                        "score": number (0-10),
+                        "comments": "evaluation of answer content"
+                    },
+                    "delivery": {
+                        "score": number (0-10),
+                        "comments": "evaluation of answer structure and delivery"
+                    }
+                },
+                "improvementSuggestions": ["list", "of", "specific", "suggestions"],
+                "overallComment": "general assessment and conclusion"
+            }
 
-            Candidate's answers: ${answer}
+            Ensure the response is a valid JSON object. Answer in the language of the Interview Question.`;
+    
+        try {
+            const result = await this.model.generateContent(prompt);
+            const responseText = result?.response?.candidates?.[0]?.content?.parts?.map(part => part.text).join('') || '{}';
+            
+            // Extract JSON from response
+            const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+            const jsonString = jsonMatch ? jsonMatch[0] : responseText;
+            const evaluation = JSON.parse(jsonString);
+            
+            // Generate HTML for backward compatibility
+            const htmlContent = this.formatEvaluationHtml(evaluation);
+            
+            return {
+                json: evaluation,
+                html: htmlContent
+            };
+        } catch (error) {
+            console.error("Error evaluating answer:", error);
+            return {
+                json: {
+                    score: 0,
+                    error: "Failed to evaluate answer"
+                },
+                html: "<p>Error evaluating answer</p>"
+            };
+        }
+    }
 
-            Follow these steps:
-
-            1. Analyze the JD content to identify key requirements and criteria.
-
-            2. Evaluate the response's relevance to those criteria, clarity, logic, and practicality.
-
-            3. Score the overall response out of 10 (10 being perfect).
-
-            4. Score each response in detail.
-
-            5. Explain each point in detail.
-
-            6. Give an overall assessment of the response's relevance.
-
-            7. Give detailed assessment of the strengths and weaknesses of the response.
-
-            8. If the score is below 4, state the dissatisfaction, give advice for improvement for next time, such as preparing before the interview.
-
-            9. If the score is below 5, give a weak suggestion for improvement; Give specific suggestions for improving the response.
-
-            10. If the score is 5 or above, just give a brief comment. points for improvement.
-
-            Answer in the language of the Interview Question in a professional and clear manner.`;
-
-        return this.generateContent(prompt);
+    // Add this helper method to format JSON evaluation as HTML
+    formatEvaluationHtml(evaluation) {
+        return `
+            <div class="evaluation-result">
+                <h4>Overall Score: ${evaluation.score}/10</h4>
+                <p><strong>Relevance:</strong> ${evaluation.relevance}</p>
+                
+                <h5>Strengths:</h5>
+                <ul>
+                    ${evaluation.strengths.map(s => `<li>${s}</li>`).join('')}
+                </ul>
+                
+                <h5>Areas for Improvement:</h5>
+                <ul>
+                    ${evaluation.weaknesses.map(w => `<li>${w}</li>`).join('')}
+                </ul>
+                
+                <h5>Detailed Feedback:</h5>
+                <div class="detailed-scores">
+                    <p><strong>Clarity:</strong> ${evaluation.detailedFeedback.clarity.score}/10 - ${evaluation.detailedFeedback.clarity.comments}</p>
+                    <p><strong>Content:</strong> ${evaluation.detailedFeedback.content.score}/10 - ${evaluation.detailedFeedback.content.comments}</p>
+                    <p><strong>Delivery:</strong> ${evaluation.detailedFeedback.delivery.score}/10 - ${evaluation.detailedFeedback.delivery.comments}</p>
+                </div>
+                
+                <h5>Suggestions for Improvement:</h5>
+                <ul>
+                    ${evaluation.improvementSuggestions.map(s => `<li>${s}</li>`).join('')}
+                </ul>
+                
+                <p><strong>Overall Assessment:</strong> ${evaluation.overallComment}</p>
+            </div>
+        `;
     }
 
     /**
