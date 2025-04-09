@@ -84,15 +84,19 @@ exports.generateQuestion = async (req, res) => {
 
         const targetLanguage = getLanguageName(interviewLanguage);
         
-        // Initialize AI service and generate question
+        // Initialize AI service and generate questions
         const aiService = new AIService(apiKey);
-        const htmlContent = await aiService.generateQuestion(jdText, targetLanguage);
+        const result = await aiService.generateQuestion(jdText, targetLanguage);
 
-        // Return the question along with the original JD content
-        res.json({ question: htmlContent, jdText });
+        // Return both JSON and HTML formats along with the original JD content
+        res.json({ 
+            questions: result.json,
+            questionHtml: result.html,
+            jdText 
+        });
     } catch (error) {
-        console.error('Error generating question:', error);
-        res.status(500).json({ error: 'Failed to generate question.' });
+        console.error('Error generating questions:', error);
+        res.status(500).json({ error: 'Failed to generate questions.' });
     }
 };
 
@@ -145,20 +149,29 @@ exports.generateAnswer = async (req, res) => {
         const apiKey = checkApiKey(req, res);
         if (!apiKey) return;
 
-        const { jdText, question, guidance } = req.body;
-        if (!jdText || !question) {
-            return res.status(400).json({ error: 'JD and question are required.' });
+        const { jdText, questions, guidance } = req.body;
+        if (!jdText || !questions || !Array.isArray(questions)) {
+            return res.status(400).json({ error: 'JD and array of questions are required.' });
         }
 
-        // Initialize AI service and generate sample answer
+        // Initialize AI service
         const aiService = new AIService(apiKey);
-        const htmlContent = await aiService.generateAnswer(jdText, question, guidance);
+        
+        // Generate answers for all questions
+        const answers = await Promise.all(questions.map(async (question) => {
+            const htmlContent = await aiService.generateAnswer(jdText, question, guidance);
+            return {
+                questionId: question.id,
+                question: question.question,
+                answer: htmlContent
+            };
+        }));
 
-        // Return the sample answer
-        res.json({ answer: htmlContent });
+        // Return all answers
+        res.json({ answers });
     } catch (error) {
-        console.error('Error generating sample answer:', error);
-        res.status(500).json({ error: 'Failed to generate sample answer.' });
+        console.error('Error generating answers:', error);
+        res.status(500).json({ error: 'Failed to generate answers.' });
     }
 };
 

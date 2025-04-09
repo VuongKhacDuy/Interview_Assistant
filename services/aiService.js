@@ -26,19 +26,40 @@ class AIService {
     }
 
     /**
-     * Generate an interview question based on a job description
+     * Generate interview questions based on a job description
      * @param {string} jdText - Job description text
      * @param {string} targetLanguage - Target language for the response
-     * @returns {string} HTML content with the generated question
+     * @returns {Object} JSON object containing questions and HTML formatted content
      */
     async generateQuestion(jdText, targetLanguage) {
         const prompt = `You are an assistant who creates interview questions based on the job description (JD) below.
 
                 First, check if the input contains the typical elements of a job description (e.g., tasks, responsibilities, professional requirements, required skills, etc.).
 
-                - If not, reply: "The input is not a job description (JD)".
+                - If not, reply with a JSON object: {"isValid": false, "message": "The input is not a job description (JD)"}
 
-                - If valid, suggest some interview questions that are relevant to that field that match the number of years of experience and level in the JD, then select one question for the user to answer (if the JD is about programming, you can ask about code, algorithm and solution questions at the level that matches the required number of years of experience in the JD).
+                - If valid, create 5-10 interview questions that are relevant to that field that match the number of years of experience and level in the JD. If the JD is about programming, include code, algorithm and solution questions at the level that matches the required number of years of experience in the JD.
+
+                Return your response as a JSON object with this structure:
+                {
+                  "isValid": true,
+                  "questions": [
+                    {
+                      "id": 1,
+                      "question": "Full text of question 1"
+                    },
+                    {
+                      "id": 2,
+                      "question": "Full text of question 2"
+                    },
+                    ...
+                  ],
+                  "introduction": "A brief introduction to the questions (optional)"
+                }
+
+                If the JD is not about programming, return the questions in a simple and straightforward manner.
+
+                If the JD is about programming, include code, algorithm and solution questions at the level that matches the required number of years of experience in the JD.
                 Response language: ${targetLanguage}.
 
         -----------------------
@@ -47,7 +68,61 @@ class AIService {
 
         Reply in language ${targetLanguage}.`;
 
-        return this.generateContent(prompt);
+        try {
+            const result = await this.model.generateContent(prompt);
+            const responseText = result?.response?.candidates?.[0]?.content?.parts?.map(part => part.text).join('') || '{"isValid": false, "message": "No response from AI."}';
+            
+            // Try to parse the response as JSON
+            let jsonResponse;
+            try {
+                // Find JSON content in the response (in case there's additional text)
+                const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+                const jsonString = jsonMatch ? jsonMatch[0] : responseText;
+                jsonResponse = JSON.parse(jsonString);
+            } catch (error) {
+                console.error("Failed to parse JSON response:", error);
+                // If parsing fails, create a fallback response with the raw text
+                jsonResponse = {
+                    isValid: true,
+                    questions: [{
+                        id: 1,
+                        question: responseText
+                    }],
+                    introduction: "Generated question:"
+                };
+            }
+            
+            // Generate HTML version for backward compatibility
+            let htmlContent = '';
+            if (jsonResponse.isValid) {
+                htmlContent = `<div class="interview-questions">`;
+                if (jsonResponse.introduction) {
+                    htmlContent += `<p>${jsonResponse.introduction}</p>`;
+                }
+                htmlContent += `<ol>`;
+                jsonResponse.questions.forEach(q => {
+                    htmlContent += `<li>${q.question}</li>`;
+                });
+                htmlContent += `</ol></div>`;
+            } else {
+                htmlContent = `<p>${jsonResponse.message || "Invalid job description"}</p>`;
+            }
+            
+            // Return both JSON and HTML
+            return {
+                json: jsonResponse,
+                html: htmlContent
+            };
+        } catch (error) {
+            console.error("Error generating questions:", error);
+            return {
+                json: {
+                    isValid: false,
+                    message: "Error generating questions"
+                },
+                html: "<p>Error generating questions</p>"
+            };
+        }
     }
 
     /**
