@@ -173,79 +173,96 @@
               const jdText = document.getElementById('hiddenJDText').value;
               const questions = JSON.parse(document.getElementById('hiddenQuestions').value);
               
-              const response = await fetch('/jd/generate-answer', {
-                  method: 'POST',
-                  headers: {
-                      'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify({
-                      jdText,
-                      questions: questions.questions,
-                      guidance: ''
-                  })
-              });
+              // Clear existing answers
+              accordionContainer.innerHTML = '';
               
-              const data = await response.json();
-              if (data.error) {
-                  alert(data.error);
-              } else {
-                  // Clear existing content
-                  accordionContainer.innerHTML = '';
-                  
-                  // Create accordion items for each answer
-                  data.answers.forEach((item, index) => {
-                      const accordionItem = `
-                          <div class="accordion-item">
-                              <h2 class="accordion-header">
-                                  <button class="accordion-button ${index === 0 ? '' : 'collapsed'}" 
-                                          type="button" 
-                                          data-bs-toggle="collapse" 
-                                          data-bs-target="#answer-${item.questionId}" 
-                                          aria-expanded="${index === 0 ? 'true' : 'false'}" 
-                                          aria-controls="answer-${item.questionId}">
-                                      Question ${item.questionId}: ${item.question}
-                                  </button>
-                              </h2>
-                              <div id="answer-${item.questionId}" 
-                                   class="accordion-collapse collapse ${index === 0 ? 'show' : ''}" 
-                                   data-bs-parent="#answersAccordion">
-                                  <div class="accordion-body">
-                                      <div class="d-flex justify-content-end mb-2">
-                                          <button type="button" 
-                                                  class="btn btn-outline-primary btn-sm me-2 use-answer" 
-                                                  data-answer-id="${item.questionId}">
-                                              <i class="bi bi-clipboard"></i> Use This Answer
-                                          </button>
-                                          <button type="button" 
-                                                  class="btn btn-outline-secondary btn-sm translate-answer" 
-                                                  data-answer-id="${item.questionId}">
-                                              <i class="bi bi-translate"></i> Translate
-                                          </button>
+              // Generate answer for each question
+              for (const question of questions.questions) {
+                  // Create accordion item with correct structure
+                  const accordionItem = `
+                      <div class="accordion-item">
+                          <h2 class="accordion-header">
+                              <button class="accordion-button collapsed" 
+                                      type="button" 
+                                      data-bs-toggle="collapse" 
+                                      data-bs-target="#answer-${question.id}" 
+                                      aria-expanded="false" 
+                                      aria-controls="answer-${question.id}">
+                                  Question ${question.id}: ${question.question}
+                              </button>
+                          </h2>
+                          <div id="answer-${question.id}" 
+                               class="accordion-collapse collapse" 
+                               data-bs-parent="#answersAccordion">
+                              <div class="accordion-body">
+                                  <div class="answer-loading">
+                                      <div class="spinner-border spinner-border-sm" role="status">
+                                          <span class="visually-hidden">Loading...</span>
                                       </div>
-                                      <div class="answer-content">${item.answer}</div>
+                                      <span class="ms-2">Generating answer...</span>
                                   </div>
+                                  <div class="answer-content" style="display: none;"></div>
                               </div>
                           </div>
                       `;
                       accordionContainer.innerHTML += accordionItem;
-                  });
-                  
-                  // Show the answer section
-                  document.getElementById('sampleAnswerSection').style.display = 'block';
-                  
-                  // Add event listeners for the buttons
-                  document.querySelectorAll('.use-answer').forEach(button => {
-                      button.addEventListener('click', function() {
-                          const answerId = this.getAttribute('data-answer-id');
-                          const answerContent = this.closest('.accordion-item').querySelector('.answer-content').innerText;
-                          editor.setValue(answerContent, 1);
+              }
+              
+              // Show the answer section
+              document.getElementById('sampleAnswerSection').style.display = 'block';
+              
+              // Generate answers asynchronously for each question
+              for (const question of questions.questions) {
+                  try {
+                      const response = await fetch('/jd/generate-answer', {
+                          method: 'POST',
+                          headers: {
+                              'Content-Type': 'application/json'
+                          },
+                          body: JSON.stringify({
+                              jdText,
+                              question: question.question
+                          })
                       });
-                  });
-                  
-                  document.querySelectorAll('.translate-answer').forEach(button => {
-                      button.addEventListener('click', async function() {
-                          const answerId = this.getAttribute('data-answer-id');
-                          const answerContent = this.closest('.accordion-item').querySelector('.answer-content');
+                      
+                      const data = await response.json();
+                      if (data.error) {
+                          throw new Error(data.error);
+                      }
+                      
+                      // Update the accordion item with the generated answer
+                      const accordionItem = document.querySelector(`#answer-${question.id}`);
+                      const loadingDiv = accordionItem.querySelector('.answer-loading');
+                      const contentDiv = accordionItem.querySelector('.answer-content');
+                      
+                      contentDiv.innerHTML = `
+                          <div class="d-flex justify-content-end mb-2">
+                              <button type="button" 
+                                      class="btn btn-outline-primary btn-sm me-2 use-answer" 
+                                      data-answer-id="${question.id}">
+                                  <i class="bi bi-clipboard"></i> Use This Answer
+                              </button>
+                              <button type="button" 
+                                      class="btn btn-outline-secondary btn-sm translate-answer" 
+                                      data-answer-id="${question.id}">
+                                  <i class="bi bi-translate"></i> Translate
+                              </button>
+                          </div>
+                          ${data.answer}
+                      `;
+                      
+                      // Hide loading and show content
+                      loadingDiv.style.display = 'none';
+                      contentDiv.style.display = 'block';
+                      
+                      // Add event listeners for the buttons
+                      contentDiv.querySelector('.use-answer').addEventListener('click', function() {
+                          editor.setValue(data.answer, 1);
+                      });
+                      
+                      contentDiv.querySelector('.translate-answer').addEventListener('click', async function() {
+                          const translateBtn = this;
+                          const answerContent = contentDiv;
                           const targetLanguage = document.getElementById('translateLanguage').value;
                           
                           // Store original content if not already stored
@@ -254,10 +271,10 @@
                           }
                           
                           // Toggle translation
-                          if (this.getAttribute('data-translated') === 'true') {
+                          if (translateBtn.getAttribute('data-translated') === 'true') {
                               answerContent.innerHTML = answerContent.getAttribute('data-original');
-                              this.innerHTML = '<i class="bi bi-translate"></i> Translate';
-                              this.setAttribute('data-translated', 'false');
+                              translateBtn.innerHTML = '<i class="bi bi-translate"></i> Translate';
+                              translateBtn.setAttribute('data-translated', 'false');
                           } else {
                               try {
                                   const response = await fetch('/jd/translate-text', {
@@ -274,28 +291,37 @@
                                   
                                   const data = await response.json();
                                   if (data.error) {
-                                      alert(data.error);
-                                  } else {
-                                      answerContent.innerHTML = data.translation;
-                                      this.innerHTML = '<i class="bi bi-translate"></i> Show Original';
-                                      this.setAttribute('data-translated', 'true');
+                                      throw new Error(data.error);
                                   }
+                                  
+                                  answerContent.innerHTML = data.translation;
+                                  translateBtn.innerHTML = '<i class="bi bi-translate"></i> Show Original';
+                                  translateBtn.setAttribute('data-translated', 'true');
                               } catch (err) {
                                   console.error(err);
                                   alert('Translation failed. Please try again.');
                               }
                           }
                       });
-                  });
-              }
-          } catch (err) {
-              console.error(err);
-              alert('Failed to generate answers. Please try again.');
-          } finally {
-              // Re-enable button and hide spinner
-              answerBtn.disabled = false;
-              spinner.style.display = 'none';
+                  } catch (err) {
+                      console.error(`Error generating answer for question ${question.id}:`, err);
+                      const accordionItem = document.querySelector(`#answer-${question.id}`);
+                      const loadingDiv = accordionItem.querySelector('.answer-loading');
+                      const contentDiv = accordionItem.querySelector('.answer-content');
+                      
+                      loadingDiv.style.display = 'none';
+                      contentDiv.style.display = 'block';
+                      contentDiv.innerHTML = '<div class="text-danger">Failed to generate answer. Please try again.</div>';
+                  }
           }
+      } catch (err) {
+          console.error(err);
+          alert('Failed to generate answers. Please try again.');
+      } finally {
+          // Re-enable button and hide spinner
+          answerBtn.disabled = false;
+          spinner.style.display = 'none';
+      }
       });
       </script>
 
@@ -704,7 +730,6 @@ document.getElementById('getGuidance')?.addEventListener('click', async function
     const guidanceSection = document.getElementById('guidanceSection');
     const guidanceResult = document.getElementById('guidanceResult');
     
-    // Disable button and show spinner
     guidanceBtn.disabled = true;
     spinner.style.display = 'inline-block';
     
@@ -712,35 +737,38 @@ document.getElementById('getGuidance')?.addEventListener('click', async function
         const jdText = document.getElementById('hiddenJDText').value;
         const questions = JSON.parse(document.getElementById('hiddenQuestions').value);
         
-        const response = await fetch('/jd/get-guidance', {
+        const response = await fetch('/jd/generate-guidance', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 jdText,
-                questions: questions.questions
+                questions: questions.questions // Make sure we're sending the questions array
             })
         });
         
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
         if (data.error) {
-            alert(data.error);
-        } else {
-            // Display guidance
-            guidanceResult.innerHTML = data.guidance;
-            guidanceSection.style.display = 'block';
-            
-            // Reset translation state
-            originalGuidanceHtml = data.guidance;
-            isCurrentlyTranslated = false;
-            document.getElementById('translateGuidance').innerHTML = '<i class="bi bi-translate"></i> Translate';
+            throw new Error(data.error);
         }
+        
+        guidanceResult.innerHTML = data.guidance;
+        guidanceSection.style.display = 'block';
+        
+        // Reset translation state
+        originalGuidanceHtml = data.guidance;
+        isCurrentlyTranslated = false;
+        document.getElementById('translateGuidance').innerHTML = '<i class="bi bi-translate"></i> Translate';
+        
     } catch (err) {
-        console.error(err);
-        alert('Failed to get guidance. Please try again.');
+        console.error('Guidance error:', err);
+        alert('Failed to get guidance. Please try again. Error: ' + err.message);
     } finally {
-        // Re-enable button and hide spinner
         guidanceBtn.disabled = false;
         spinner.style.display = 'none';
     }

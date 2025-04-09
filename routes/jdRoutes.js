@@ -16,7 +16,7 @@ router.post('/jd/generate-question', upload.single('pdfFile'), JDController.gene
 // Route evaluates the answer
 router.post('/jd/evaluate-answer', upload.none(), JDController.evaluateAnswer);
 
-// Add this new route for generating guidance
+// Route for generating guidance
 router.post('/jd/generate-guidance', JDController.generateGuidance);
 
 // Add this new route for translating guidance

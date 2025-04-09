@@ -124,23 +124,13 @@ exports.evaluateAnswer = async (req, res) => {
 
 exports.generateGuidance = async (req, res) => {
     try {
-        const apiKey = checkApiKey(req, res);
-        if (!apiKey) return;
-
-        const { jdText, question } = req.body;
-        if (!jdText || !question) {
-            return res.status(400).json({ error: 'JD and question are required.' });
-        }
-
-        // Initialize AI service and generate guidance
-        const aiService = new AIService(apiKey);
-        const htmlContent = await aiService.generateGuidance(jdText, question);
-
-        // Return the guidance
-        res.json({ guidance: htmlContent });
+        const { jdText, questions } = req.body;
+        const aiService = new AIService(req.cookies.apiKey);
+        const guidance = await aiService.generateGuidance(jdText, questions);
+        res.json({ guidance });
     } catch (error) {
         console.error('Error generating guidance:', error);
-        res.status(500).json({ error: 'Failed to generate guidance.' });
+        res.status(500).json({ error: error.message });
     }
 };
 

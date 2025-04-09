@@ -233,23 +233,53 @@ class AIService {
      * @param {string} question - Interview question
      * @returns {string} HTML content with the guidance
      */
-    async generateGuidance(jdText, question) {
-        const prompt = `You are an expert interview coach. Based on the following job description (JD) and interview question, provide guidance on how to effectively answer this question.
+    async generateGuidance(jdText, questions) {
+        // If questions is an array, generate guidance for each question
+        if (Array.isArray(questions)) {
+            const guidancePromises = questions.map(async (q) => {
+                const prompt = `You are an expert interview coach. Based on the following job description (JD) and interview question, provide guidance on how to effectively answer this question.
 
-            JD: ${jdText}
+                    JD: ${jdText}
 
-            Interview Question: ${question}
+                    Interview Question: ${q.question}
 
-            Please provide:
-            1. A structured approach to answering this question
-            2. Key points that should be included in the answer
-            3. Common mistakes to avoid
-            4. Examples or frameworks that could be used (if applicable)
-            5. How to tailor the answer to highlight relevant skills from the JD
+                    Please provide:
+                    1. A structured approach to answering this question
+                    2. Key points that should be included in the answer
+                    3. Common mistakes to avoid
+                    4. Examples or frameworks that could be used (if applicable)
+                    5. How to tailor the answer to highlight relevant skills from the JD
 
-            Format your response in a clear, concise manner with bullet points and sections.`;
+                    Format your response in a clear, concise manner with bullet points and sections.`;
 
-        return this.generateContent(prompt);
+                const guidance = await this.generateContent(prompt);
+                return {
+                    id: q.id,
+                    question: q.question,
+                    guidance: guidance
+                };
+            });
+
+            const results = await Promise.all(guidancePromises);
+            
+            // Format all guidance into a single HTML document
+            let combinedHtml = '<div class="guidance-container">';
+            for (const result of results) {
+                combinedHtml += `
+                    <div class="guidance-item mb-4">
+                        <h4>Question ${result.id}: ${result.question}</h4>
+                        <div class="guidance-content">${result.guidance}</div>
+                    </div>
+                `;
+            }
+            combinedHtml += '</div>';
+            
+            return combinedHtml;
+        } else {
+            // Handle single question case (backward compatibility)
+            const prompt = `You are an expert interview coach...`;
+            return this.generateContent(prompt);
+        }
     }
 
     /**
@@ -259,25 +289,55 @@ class AIService {
      * @param {string} guidance - Optional guidance for answering
      * @returns {string} HTML content with the sample answer
      */
-    async generateAnswer(jdText, question, guidance = '') {
-        const prompt = `You are an expert candidate interviewing for a position. Based on the following job description (JD), interview question, and guidance (if provided), generate a high-quality sample answer.
+    async generateAnswer(jdText, questions, guidance = '') {
+        // Handle array of questions
+        if (Array.isArray(questions)) {
+            const answerPromises = questions.map(async (q) => {
+                const prompt = `You are an expert candidate interviewing for a position. Based on the following job description (JD), interview question, and guidance (if provided), generate a high-quality sample answer.
 
-            JD: ${jdText}
+                    JD: ${jdText}
 
-            Interview Question: ${question}
+                    Interview Question: ${q.question}
+                    
+                    ${guidance ? `Guidance: ${guidance}` : ''}
+
+                    Please provide a comprehensive, well-structured answer that:
+                    1. Directly addresses the question
+                    2. Demonstrates relevant skills and experience
+                    3. Uses specific examples where appropriate
+                    4. Aligns with the requirements in the job description
+                    5. Shows enthusiasm and cultural fit
+
+                    Format your response as if you are the candidate speaking in an interview. Make it sound natural and conversational while being professional.`;
+
+                const answer = await this.generateContent(prompt);
+                return {
+                    id: q.id,
+                    question: q.question,
+                    answer: answer
+                };
+            });
+
+            const results = await Promise.all(answerPromises);
             
-            ${guidance ? `Guidance: ${guidance}` : ''}
-
-            Please provide a comprehensive, well-structured answer that:
-            1. Directly addresses the question
-            2. Demonstrates relevant skills and experience
-            3. Uses specific examples where appropriate
-            4. Aligns with the requirements in the job description
-            5. Shows enthusiasm and cultural fit
-
-            Format your response as if you are the candidate speaking in an interview. Make it sound natural and conversational while being professional.`;
-
-        return this.generateContent(prompt);
+            // Format all answers into a single HTML document
+            let combinedHtml = '<div class="sample-answers-container">';
+            for (const result of results) {
+                combinedHtml += `
+                    <div class="sample-answer-item mb-4">
+                        <h4>Question ${result.id}: ${result.question}</h4>
+                        <div class="sample-answer-content">${result.answer}</div>
+                    </div>
+                `;
+            }
+            combinedHtml += '</div>';
+            
+            return combinedHtml;
+        } else {
+            // Handle single question case (backward compatibility)
+            const prompt = `You are an expert candidate...`;
+            return this.generateContent(prompt);
+        }
     }
 
     /**
