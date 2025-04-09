@@ -3,17 +3,17 @@ const router = express.Router();
 const JDController = require('../controllers/JDController');
 const multer = require('multer');
 
-// Sử dụng multer với bộ nhớ tạm để xử lý upload file PDF
+// Use multer with cache to handle PDF file upload
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-// Route hiển thị giao diện JD
+// Route to display JD interface
 router.get('/', JDController.renderJDView);
 
-// Route tạo câu hỏi: hỗ trợ nhận file PDF (field name: pdfFile) và/hoặc jdText
+// Route to create question: supports receiving PDF file (field name: pdfFile) and/or jdText
 router.post('/jd/generate-question', upload.single('pdfFile'), JDController.generateQuestion);
 
-// Route đánh giá câu trả lời
+// Route evaluates the answer
 router.post('/jd/evaluate-answer', upload.none(), JDController.evaluateAnswer);
 
 module.exports = router;

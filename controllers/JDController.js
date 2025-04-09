@@ -2,26 +2,26 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { marked } = require('marked');
 const pdfParse = require('pdf-parse');
 
-// Lấy API key từ biến môi trường .env (GEN_API_KEY)
+// Get API key from .env environment variable (GEN_API_KEY)
 const GEN_API_KEY = process.env.GEN_API_KEY;
 if (!GEN_API_KEY) {
-    console.error("GEN_API_KEY không được định nghĩa trong file .env");
+    console.error("GEN_API_KEY is not defined in .env file");
 }
 
-// Map để lưu trạng thái cooldown của người dùng (dựa theo IP)
+// Map to save user cooldown status (based on IP)
 const userCooldowns = new Map();
 
 /**
- * Render giao diện JD (form nhập JD hoặc upload PDF)
+ * Render JD interface (JD input form or PDF upload)
  */
 exports.renderJDView = async (req, res) => {
     try {
         const apiKey = req.cookies?.apiKey;
-        
+
         res.render('jd', {
             title: 'JD Assistant',
             showApiKeyForm: !apiKey,
-            message: !apiKey ? 'Bạn cần nhập Google API Key để sử dụng ứng dụng. Làm theo các bước sau:\n\n1. Truy cập https://aistudio.google.com/apikey\n2. Đăng nhập tài khoản Google\n3. Tạo API Key mới\n4. Copy và dán API Key vào form bên dưới' : ''
+            message: !apiKey ? ' You need to enter Google API Key to use the application. Follow these steps:\n\n1. Go to https://aistudio.google.com/apikey\n2. Log in to your Google account\n3. Create a new API Key\n4. Copy and paste the API Key into the form below' : ''
         });
     } catch (error) {
         console.error('Error rendering JD view:', error);
@@ -36,7 +36,7 @@ exports.generateQuestion = async (req, res) => {
             return res.render('jd', {
                 title: 'JD Assistant',
                 showApiKeyForm: true,
-                message: 'Bạn cần nhập Google API Key để sử dụng ứng dụng. Làm theo các bước sau:\n\n1. Truy cập https://aistudio.google.com/apikey\n2. Đăng nhập tài khoản Google\n3. Tạo API Key mới\n4. Copy và dán API Key vào form bên dưới'
+                message: 'You need to enter Google API Key to use the application. Follow these steps:\n\n1. Go to https://aistudio.google.com/apikey\n2. Log in to your Google account\n3. Create a new API Key\n4. Copy and paste the API Key into the form below'
             });
         }
 
@@ -67,11 +67,11 @@ exports.generateQuestion = async (req, res) => {
         const cooldownPeriod = 5 * 1000;
         if (lastRequestTime && now - lastRequestTime < cooldownPeriod) {
             const remainingTime = Math.ceil((cooldownPeriod - (now - lastRequestTime)) / 1000);
-            return res.status(429).json({ error: `Vui lòng chờ ${remainingTime} giây trước khi gửi yêu cầu mới.` });
+            return res.status(429).json({ error: `Please wait ${remainingTime} seconds before sending a new request.` });
         }
         userCooldowns.set(userId, now);
 
-        // Map chuyển đổi code ngôn ngữ phỏng vấn (ví dụ 'vi', 'en', 'zh') sang tên hiển thị
+        // Map converts interview language code (eg 'vi', 'en', 'zh') to display name
         const languageMap = {
             vi: 'Tiếng Việt',
             en: 'English',
@@ -82,24 +82,27 @@ exports.generateQuestion = async (req, res) => {
         // Tạo prompt dùng một template duy nhất:
         // - Kiểm tra đầu vào có chứa các đặc trưng của JD hay không.
         // - Nếu hợp lệ, gợi ý câu hỏi và chọn ra 1 câu hỏi duy nhất.
-        const prompt = `Bạn là trợ lý tạo câu hỏi phỏng vấn dựa trên mô tả công việc (JD) dưới đây.
-        Trước tiên, hãy kiểm tra xem nội dung đầu vào có chứa các yếu tố đặc trưng của một mô tả công việc (ví dụ: nhiệm vụ, trách nhiệm, yêu cầu chuyên môn, kỹ năng cần có, …) không.
-        - Nếu không, hãy trả lời: "Đầu vào không phải là mô tả công việc (JD)".
-        - Nếu hợp lệ, hãy gợi ý một số câu hỏi phỏng vấn phù hợp với lĩnh vực đó phù hợp với số năm kinh nghiệm và trình độ trong JD, sau đó chọn ra một câu hỏi để người dùng trả lời (nếu JD về lập trình thì có thể hỏi về code, các câu hỏi thuật toán và giải thuật theo cấp độ phù hợp với yêu cầu số năm kinh nghiệm trong JD).
-        Ngôn ngữ trả lời: ${targetLanguage}.
+        const prompt = `You are an assistant who creates interview questions based on the job description (JD) below.
+
+                        First, check if the input contains the typical elements of a job description (e.g., tasks, responsibilities, professional requirements, required skills, etc.).
+
+                        - If not, reply: "The input is not a job description (JD)".
+
+                        - If valid, suggest some interview questions that are relevant to that field that match the number of years of experience and level in the JD, then select one question for the user to answer (if the JD is about programming, you can ask about code, algorithm and solution questions at the level that matches the required number of years of experience in the JD).
+                        Response language: ${targetLanguage}.
 
         -----------------------
         ${jdText}
         -----------------------
 
-        Trả lời bằng ngôn ngữ ${targetLanguage}.`;
+        Reply in language ${targetLanguage}.`;
 
-        // Gọi API của Google Generative AI với prompt đã tạo
+        // Call Google Generative AI API with created prompt
         const result = await model.generateContent(prompt);
         const rawMarkdown = result?.response?.candidates?.[0]?.content?.parts?.map(part => part.text).join('') || 'No response from AI.';
         const htmlContent = marked(rawMarkdown);
 
-        // Trả về câu hỏi cùng với nội dung JD ban đầu
+        // Returns the query along with the original JD content
         res.json({ question: htmlContent, jdText });
     } catch (error) {
         console.error('Error generating question:', error);
@@ -114,44 +117,59 @@ exports.evaluateAnswer = async (req, res) => {
             return res.render('jd', {
                 title: 'JD Assistant',
                 showApiKeyForm: true,
-                message: 'Bạn cần nhập Google API Key để sử dụng ứng dụng. Làm theo các bước sau:\n\n1. Truy cập https://aistudio.google.com/apikey\n2. Đăng nhập tài khoản Google\n3. Tạo API Key mới\n4. Copy và dán API Key vào form bên dưới'
+                message: 'You need to enter Google API Key to use the application. Follow these steps:\n\n1. Go to https://aistudio.google.com/apikey\n2. Log in to your Google account\n3. Create a new API Key\n4. Copy and paste the API Key into the form below'
             });
         }
 
         const { jdText, question, answer } = req.body;
         if (!jdText || !question || !answer) {
-            return res.status(400).json({ error: 'JD, câu hỏi và câu trả lời đều là bắt buộc.' });
+            return res.status(400).json({ error: 'JD, questions and answers are all required.' });
         }
 
         // Initialize GenAI with the API key from cookies
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
-        // Tạo prompt đánh giá dựa trên JD, câu hỏi đã tạo và câu trả lời của ứng viên.
-        // Hướng dẫn chi tiết về cách đánh giá câu trả lời.
-        const prompt = `Bạn là một chuyên gia nhân sự giàu kinh nghiệm và rất khó tính, được giao nhiệm vụ đánh giá chi tiết câu trả lời của ứng viên cho câu hỏi phỏng vấn duy nhất dưới đây, được tạo dựa trên mô tả công việc (JD).
+        // Create an assessment prompt based on the JD, created questions, and candidate answers. 
+        // Detailed instructions on how to evaluate answers.
+        const prompt = `You are an experienced and very demanding HR professional, tasked with evaluating in detail the candidate's responses to the single interview question below, created based on the job description (JD).
 
             JD: ${jdText}
 
-            Câu hỏi phỏng vấn: ${question}
+            Interview questions: ${question}
 
-            Câu trả lời của ứng viên: ${answer}
+            Candidate's answers: ${answer}
 
-            Hãy thực hiện các bước sau:
-            1. Phân tích nội dung JD để nhận diện các yêu cầu và tiêu chí chính.
-            2. Đánh giá mức độ phù hợp của câu trả lời với các tiêu chí đó, sự rõ ràng, logic và tính thực tiễn.
-            3. Chấm điểm câu trả lời trên thang điểm 10 (10 là hoàn hảo).
-            4. Đưa ra nhận xét chi tiết về điểm mạnh và điểm yếu của câu trả lời.
-            5. Nếu điểm dưới 6, hãy đưa ra gợi yếu thể để cải thiện; nếu điểm từ 6 trở lên, chỉ cần nhận xét tóm tắt.
+            Follow these steps:
 
-            Trả lời bằng ngôn ngữ của Câu hỏi phỏng vấn với phong cách chuyên nghiệp và rõ ràng.`;
+            1. Analyze the JD content to identify key requirements and criteria.
 
-        // Gọi API của Google Generative AI để nhận kết quả đánh giá
+            2. Evaluate the response's relevance to those criteria, clarity, logic, and practicality.
+
+            3. Score the overall response out of 10 (10 being perfect).
+
+            4. Score each response in detail.
+
+            5. Explain each point in detail.
+
+            6. Give an overall assessment of the response's relevance.
+
+            7. Give detailed assessment of the strengths and weaknesses of the response.
+
+            8. If the score is below 4, state the dissatisfaction, give advice for improvement for next time, such as preparing before the interview.
+
+            9. If the score is below 5, give a weak suggestion for improvement; Give specific suggestions for improving the response.
+
+            10. If the score is 5 or above, just give a brief comment. points for improvement.
+
+            Answer in the language of the Interview Question in a professional and clear manner.`;
+
+        // Call Google Generative AI API to get evaluation results
         const result = await model.generateContent(prompt);
         const rawMarkdown = result?.response?.candidates?.[0]?.content?.parts?.map(part => part.text).join('') || 'No response from AI.';
         const htmlContent = marked(rawMarkdown);
 
-        // Trả về kết quả đánh giá
+        // Return the evaluation results
         res.json({ evaluation: htmlContent });
     } catch (error) {
         console.error('Error evaluating answer:', error);
