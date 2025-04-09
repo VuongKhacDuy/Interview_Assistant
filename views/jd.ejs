@@ -55,7 +55,7 @@
         <!-- Nút xóa file PDF khi không cần thiết -->
         <button type="button" id="removePdf" class="btn btn-danger btn-sm mt-2" style="display: none;">Xóa file PDF</button>
       </div>
-      <!-- Dropdown chọn ngôn ngữ phỏng vấn toàn cầu (ví dụ: Tiếng Việt, English, 中文) -->
+      <!-- Dropdown chọn ngôn ngữ phỏng vấn toàn cầu (ví dụng: Tiếng Việt, English, 中文) -->
       <div class="mb-3">
         <label for="interviewLanguage" class="form-label">Chọn ngôn ngữ phỏng vấn:</label>
         <select id="interviewLanguage" name="interviewLanguage" class="form-select" style="width: 100%;">
@@ -73,10 +73,44 @@
     </form>
 
     <!-- Phần hiển thị câu hỏi được tạo từ server -->
-    <!-- Add this after the generated question display but before the answer form -->
     <div id="questionSection" class="mt-4" style="display: none;">
       <h3>Generated Question:</h3>
       <div id="generatedQuestion" class="mb-3"></div>
+      
+      <!-- Add specific question section right after the generated question -->
+      <div id="specificQuestionSection" class="mt-3 mb-4">
+        <h4>Answer Specific Question:</h4>
+        <div class="mb-3">
+          <input type="text" id="specificQuestion" class="form-control" placeholder="Enter a specific interview question...">
+        </div>
+        <div class="mb-3">
+          <button type="button" id="getSpecificAnswer" class="btn btn-primary">
+            <i class="bi bi-question-circle"></i> Get Answer
+          </button>
+          <span id="specificAnswerSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;" role="status" aria-hidden="true"></span>
+        </div>
+        
+        <!-- Specific answer results section -->
+        <div id="specificAnswerSection" class="mt-3 mb-4" style="display: none;">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 id="specificQuestionDisplay"></h5>
+            <div class="d-flex align-items-center gap-2">
+              <button type="button" id="translateSpecificAnswer" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-translate"></i> Translate
+              </button>
+              <select id="translateSpecificAnswerLanguage" class="form-select form-select-sm" style="width: auto;">
+                <option value="vi">Tiếng Việt</option>
+                <option value="en">English</option>
+                <option value="zh">中文</option>
+              </select>
+              <button type="button" id="useSpecificAnswer" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-clipboard"></i> Use This Answer
+              </button>
+            </div>
+          </div>
+          <div id="specificAnswerResult" class="p-3 border rounded bg-light"></div>
+        </div>
+      </div>
       
       <!-- Add guidance button -->
       <div class="mb-3">
@@ -87,6 +121,7 @@
       </div>
       
       <!-- Guidance results section -->
+      <!-- Add after the guidance section but before the answer form -->
       <div id="guidanceSection" class="mt-3 mb-4" style="display: none;">
         <h4>Answer Guidance:</h4>
         <div class="d-flex align-items-center gap-2 mb-2">
@@ -101,6 +136,34 @@
           <span id="translateSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;" role="status" aria-hidden="true"></span>
         </div>
         <div id="guidanceResult" class="p-3 border rounded bg-light"></div>
+      </div>
+      
+      <!-- Add sample answer generation button -->
+      <div class="mb-3">
+        <button type="button" id="generateAnswer" class="btn btn-success">
+          <i class="bi bi-robot"></i> Generate Sample Answer
+        </button>
+        <span id="answerGenSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;" role="status" aria-hidden="true"></span>
+      </div>
+      
+      <!-- Sample answer section -->
+      <div id="sampleAnswerSection" class="mt-3 mb-4" style="display: none;">
+        <h4>Sample Answer:</h4>
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <button type="button" id="translateAnswer" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-translate"></i> Translate
+          </button>
+          <select id="translateAnswerLanguage" class="form-select form-select-sm" style="width: auto;">
+            <option value="vi">Tiếng Việt</option>
+            <option value="en">English</option>
+            <option value="zh">中文</option>
+          </select>
+          <button type="button" id="useAnswer" class="btn btn-outline-primary btn-sm ms-2">
+            <i class="bi bi-clipboard"></i> Use This Answer
+          </button>
+          <span id="translateAnswerSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;" role="status" aria-hidden="true"></span>
+        </div>
+        <div id="sampleAnswerResult" class="p-3 border rounded bg-light"></div>
       </div>
       
       <!-- Form for answer evaluation (existing code) -->
@@ -430,6 +493,122 @@
     });
 </script>
 
+<!-- Add this JavaScript to handle the answer generation and translation -->
+<script>
+  // Store original content for translations
+  // Remove this duplicate declaration
+  // let originalGuidanceHtml = '';
+  let originalAnswerHtml = '';
+  let isGuidanceTranslated = false;
+  let isAnswerTranslated = false;
+  
+  // Handle generate sample answer button
+  document.getElementById('generateAnswer')?.addEventListener('click', async function() {
+    const generateBtn = document.getElementById('generateAnswer');
+    const spinner = document.getElementById('answerGenSpinner');
+    
+    // Disable button and show spinner
+    generateBtn.disabled = true;
+    spinner.style.display = 'inline-block';
+    
+    try {
+      const jdText = document.getElementById('hiddenJDText').value;
+      const question = document.getElementById('hiddenQuestion').value;
+      const guidance = document.getElementById('guidanceResult').innerText || '';
+      
+      const response = await fetch('/jd/generate-answer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ jdText, question, guidance })
+      });
+      
+      const data = await response.json();
+      if (data.error) {
+        alert(data.error);
+      } else {
+        // Display sample answer
+        document.getElementById('sampleAnswerResult').innerHTML = data.answer;
+        document.getElementById('sampleAnswerSection').style.display = 'block';
+        originalAnswerHtml = data.answer;
+        isAnswerTranslated = false;
+      }
+    } catch (err) {
+      console.error(err);
+      alert("An error occurred. Please try again.");
+    } finally {
+      // Re-enable button and hide spinner
+      generateBtn.disabled = false;
+      spinner.style.display = 'none';
+    }
+  });
+  
+  // Handle translate answer button
+  document.getElementById('translateAnswer')?.addEventListener('click', async function() {
+    const translateBtn = document.getElementById('translateAnswer');
+    const spinner = document.getElementById('translateAnswerSpinner');
+    const targetLanguage = document.getElementById('translateAnswerLanguage').value;
+    const answerResult = document.getElementById('sampleAnswerResult');
+    
+    // If already translated, revert to original
+    if (isAnswerTranslated) {
+      answerResult.innerHTML = originalAnswerHtml;
+      translateBtn.innerHTML = '<i class="bi bi-translate"></i> Translate';
+      isAnswerTranslated = false;
+      return;
+    }
+    
+    // Disable button and show spinner
+    translateBtn.disabled = true;
+    spinner.style.display = 'inline-block';
+    
+    try {
+      const response = await fetch('/jd/translate-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          text: answerResult.innerText, 
+          targetLanguage: targetLanguage,
+          contentType: 'answer'
+        })
+      });
+      
+      const data = await response.json();
+      if (data.error) {
+        alert(data.error);
+      } else {
+        // Display translated answer
+        answerResult.innerHTML = data.translation;
+        translateBtn.innerHTML = '<i class="bi bi-translate"></i> Show Original';
+        isAnswerTranslated = true;
+      }
+    } catch (err) {
+      console.error(err);
+      alert("An error occurred during translation. Please try again.");
+    } finally {
+      // Re-enable button and hide spinner
+      translateBtn.disabled = false;
+      spinner.style.display = 'none';
+    }
+  });
+  
+  // Handle "Use This Answer" button
+  document.getElementById('useAnswer')?.addEventListener('click', function() {
+    const sampleAnswer = document.getElementById('sampleAnswerResult').innerText;
+    editor.setValue(sampleAnswer, 1); // Set the editor content to the sample answer
+  });
+  
+  // Update translation language when interview language changes
+  document.getElementById('interviewLanguage')?.addEventListener('change', function() {
+    const lang = this.value;
+    document.getElementById('translateLanguage').value = lang;
+    document.getElementById('translateAnswerLanguage').value = lang;
+  });
+</script>
+
 <!-- Add this JavaScript to handle the translation button click -->
     <script>
       // Store the original guidance text
@@ -495,3 +674,145 @@
         document.getElementById('translateLanguage').value = this.value;
       });
     </script>
+<!-- Add this after the generated question display but before the answer form -->
+<div id="specificQuestionSection" class="mt-3 mb-4" style="display: none;">
+  <h4>Answer Specific Question:</h4>
+  <div class="mb-3">
+    <input type="text" id="specificQuestion" class="form-control" placeholder="Enter a specific interview question...">
+  </div>
+  <div class="mb-3">
+    <button type="button" id="getSpecificAnswer" class="btn btn-primary">
+      <i class="bi bi-question-circle"></i> Get Answer
+    </button>
+    <span id="specificAnswerSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;" role="status" aria-hidden="true"></span>
+  </div>
+  
+  <!-- Specific answer results section -->
+  <div id="specificAnswerSection" class="mt-3 mb-4" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h5 id="specificQuestionDisplay"></h5>
+      <div class="d-flex align-items-center gap-2">
+        <button type="button" id="translateSpecificAnswer" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-translate"></i> Translate
+        </button>
+        <select id="translateSpecificAnswerLanguage" class="form-select form-select-sm" style="width: auto;">
+          <option value="vi">Tiếng Việt</option>
+          <option value="en">English</option>
+          <option value="zh">中文</option>
+        </select>
+        <button type="button" id="useSpecificAnswer" class="btn btn-outline-primary btn-sm">
+          <i class="bi bi-clipboard"></i> Use This Answer
+        </button>
+      </div>
+    </div>
+    <div id="specificAnswerResult" class="p-3 border rounded bg-light"></div>
+  </div>
+</div>
+
+// Add this JavaScript to handle the specific question functionality
+<script>
+// Add this JavaScript to handle the specific question answer functionality
+document.getElementById('getSpecificAnswer')?.addEventListener('click', async function() {
+  const specificQuestion = document.getElementById('specificQuestion').value.trim();
+  if (!specificQuestion) {
+    alert('Please enter a specific interview question');
+    return;
+  }
+  
+  const getSpecificAnswerBtn = document.getElementById('getSpecificAnswer');
+  const spinner = document.getElementById('specificAnswerSpinner');
+  
+  // Disable button and show spinner
+  getSpecificAnswerBtn.disabled = true;
+  spinner.style.display = 'inline-block';
+  
+  try {
+    const jdText = document.getElementById('hiddenJDText').value;
+    
+    const response = await fetch('/jd/answer-specific-question', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ jdText, specificQuestion })
+    });
+    
+    const data = await response.json();
+    if (data.error) {
+      alert(data.error);
+    } else {
+      // Display specific question and answer
+      document.getElementById('specificQuestionDisplay').textContent = specificQuestion;
+      document.getElementById('specificAnswerResult').innerHTML = data.specificAnswer;
+      document.getElementById('specificAnswerSection').style.display = 'block';
+      
+      // Store original answer for translation
+      window.originalSpecificAnswerHtml = data.specificAnswer;
+      window.isSpecificAnswerTranslated = false;
+    }
+  } catch (err) {
+    console.error(err);
+    alert("An error occurred. Please try again.");
+  } finally {
+    // Re-enable button and hide spinner
+    getSpecificAnswerBtn.disabled = false;
+    spinner.style.display = 'none';
+  }
+});
+
+// Handle translate specific answer button
+document.getElementById('translateSpecificAnswer')?.addEventListener('click', async function() {
+  const translateBtn = document.getElementById('translateSpecificAnswer');
+  const targetLanguage = document.getElementById('translateSpecificAnswerLanguage').value;
+  const answerResult = document.getElementById('specificAnswerResult');
+  
+  // If already translated, revert to original
+  if (window.isSpecificAnswerTranslated) {
+    answerResult.innerHTML = window.originalSpecificAnswerHtml;
+    translateBtn.innerHTML = '<i class="bi bi-translate"></i> Translate';
+    window.isSpecificAnswerTranslated = false;
+    return;
+  }
+  
+  // Disable button
+  translateBtn.disabled = true;
+  
+  try {
+    const response = await fetch('/jd/translate-text', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ 
+        text: answerResult.innerText, 
+        targetLanguage: targetLanguage,
+        contentType: 'answer'
+      })
+    });
+    
+    const data = await response.json();
+    if (data.error) {
+      alert(data.error);
+    } else {
+      // Display translated answer
+      answerResult.innerHTML = data.translation;
+      translateBtn.innerHTML = '<i class="bi bi-translate"></i> Show Original';
+      window.isSpecificAnswerTranslated = true;
+    }
+  } catch (err) {
+    console.error(err);
+    alert("An error occurred during translation. Please try again.");
+  } finally {
+    // Re-enable button
+    translateBtn.disabled = false;
+  }
+});
+
+// Handle "Use This Answer" button for specific answers
+document.getElementById('useSpecificAnswer')?.addEventListener('click', function() {
+  const specificAnswer = document.getElementById('specificAnswerResult').innerText;
+  editor.setValue(specificAnswer, 1); // Set the editor content to the specific answer
+});
+
+// No need for the observer anymore since the section is directly embedded
+</script>

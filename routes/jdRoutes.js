@@ -22,4 +22,11 @@ router.post('/jd/generate-guidance', JDController.generateGuidance);
 // Add this new route for translating guidance
 router.post('/jd/translate-guidance', JDController.translateGuidance);
 
+// Add these new routes
+router.post('/jd/generate-answer', JDController.generateAnswer);
+router.post('/jd/translate-text', JDController.translateText);
+
+// Add this new route
+router.post('/jd/answer-specific-question', JDController.answerSpecificQuestion);
+
 module.exports = router;
