@@ -113,6 +113,18 @@ npm run stoppm2
 jd-assistant-mac cho MacOS
 jd-assistant-win.exe cho win
 
+### Chạy với file Make
+ow you can use the following commands:
+
+- make install - Install dependencies
+- make dev - Run in development mode
+- make start - Run in production mode
+- make build - Build for both platforms
+- make build-win - Build for Windows only
+- make build-mac - Build for Mac only
+- make clean - Clean up
+- make help - Show available commands
+
 ## Cách Sử Dụng
 
 1. **Mở trang web:** Sau khi chạy server, mở trình duyệt và truy cập [http://localhost:3000/](http://localhost:3000/).
