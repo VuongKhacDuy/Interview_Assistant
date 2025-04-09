@@ -19,4 +19,7 @@ router.post('/jd/evaluate-answer', upload.none(), JDController.evaluateAnswer);
 // Add this new route for generating guidance
 router.post('/jd/generate-guidance', JDController.generateGuidance);
 
+// Add this new route for translating guidance
+router.post('/jd/translate-guidance', JDController.translateGuidance);
+
 module.exports = router;

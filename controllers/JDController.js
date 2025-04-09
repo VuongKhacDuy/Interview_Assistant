@@ -177,6 +177,50 @@ exports.evaluateAnswer = async (req, res) => {
     }
 };
 
+exports.translateGuidance = async (req, res) => {
+    try {
+        const apiKey = req.cookies?.apiKey;
+        if (!apiKey) {
+            return res.status(400).json({ error: 'API key is required.' });
+        }
+
+        const { text, targetLanguage } = req.body;
+        if (!text || !targetLanguage) {
+            return res.status(400).json({ error: 'Text and target language are required.' });
+        }
+
+        // Initialize GenAI with the API key from cookies
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+
+        // Map language codes to full names
+        const languageMap = {
+            'vi': 'Vietnamese',
+            'en': 'English',
+            'zh': 'Chinese'
+        };
+        const languageName = languageMap[targetLanguage] || targetLanguage;
+
+        // Create a prompt for translation
+        const prompt = `Translate the following text to ${languageName}. Maintain all formatting, including markdown, bullet points, and numbered lists:
+
+${text}
+
+Translation:`;
+
+        // Call Google Generative AI API to get translation
+        const result = await model.generateContent(prompt);
+        const translatedText = result?.response?.candidates?.[0]?.content?.parts?.map(part => part.text).join('') || 'No response from AI.';
+        const htmlContent = marked(translatedText);
+
+        // Return the translated text
+        res.json({ translation: htmlContent });
+    } catch (error) {
+        console.error('Error translating guidance:', error);
+        res.status(500).json({ error: 'Failed to translate guidance.' });
+    }
+};
+
 exports.generateGuidance = async (req, res) => {
     try {
         const apiKey = req.cookies?.apiKey;

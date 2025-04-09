@@ -89,6 +89,17 @@
       <!-- Guidance results section -->
       <div id="guidanceSection" class="mt-3 mb-4" style="display: none;">
         <h4>Answer Guidance:</h4>
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <button type="button" id="translateGuidance" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-translate"></i> Translate
+          </button>
+          <select id="translateLanguage" class="form-select form-select-sm" style="width: auto;">
+            <option value="vi">Tiếng Việt</option>
+            <option value="en">English</option>
+            <option value="zh">中文</option>
+          </select>
+          <span id="translateSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;" role="status" aria-hidden="true"></span>
+        </div>
         <div id="guidanceResult" class="p-3 border rounded bg-light"></div>
       </div>
       
@@ -167,7 +178,7 @@
       });
     </script>
 
-    <!-- Phần hiển thị kết quả đánh giá -->
+    <!-- Phần hiển thị kết quả đánh giáá -->
     <div id="evaluationSection" class="mt-4" style="display: none;">
       <h3>Kết quả đánh giá:</h3>
       <div id="evaluationResult"></div>
@@ -418,3 +429,69 @@
         window.location.reload();
     });
 </script>
+
+<!-- Add this JavaScript to handle the translation button click -->
+    <script>
+      // Store the original guidance text
+      let originalGuidanceHtml = '';
+      let isCurrentlyTranslated = false;
+      
+      document.getElementById('translateGuidance')?.addEventListener('click', async function() {
+        const translateBtn = document.getElementById('translateGuidance');
+        const translateSpinner = document.getElementById('translateSpinner');
+        const translateLanguage = document.getElementById('translateLanguage').value;
+        const guidanceResult = document.getElementById('guidanceResult');
+        
+        // If already translated, revert to original
+        if (isCurrentlyTranslated) {
+          guidanceResult.innerHTML = originalGuidanceHtml;
+          translateBtn.innerHTML = '<i class="bi bi-translate"></i> Translate';
+          isCurrentlyTranslated = false;
+          return;
+        }
+        
+        // Save original content if not already saved
+        if (!originalGuidanceHtml) {
+          originalGuidanceHtml = guidanceResult.innerHTML;
+        }
+        
+        // Disable button and show spinner
+        translateBtn.disabled = true;
+        translateSpinner.style.display = 'inline-block';
+        
+        try {
+          const response = await fetch('/jd/translate-guidance', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+              text: guidanceResult.innerText, 
+              targetLanguage: translateLanguage 
+            })
+          });
+          
+          const data = await response.json();
+          if (data.error) {
+            alert(data.error);
+          } else {
+            // Display translated guidance
+            guidanceResult.innerHTML = data.translation;
+            translateBtn.innerHTML = '<i class="bi bi-translate"></i> Show Original';
+            isCurrentlyTranslated = true;
+          }
+        } catch (err) {
+          console.error(err);
+          alert("An error occurred during translation. Please try again.");
+        } finally {
+          // Re-enable button and hide spinner
+          translateBtn.disabled = false;
+          translateSpinner.style.display = 'none';
+        }
+      });
+      
+      // Update translation language when interview language changes
+      document.getElementById('interviewLanguage')?.addEventListener('change', function() {
+        document.getElementById('translateLanguage').value = this.value;
+      });
+    </script>
