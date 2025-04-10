@@ -25,6 +25,18 @@ const rateLimiter = new RateLimiter(5000); // 5 seconds cooldown
 exports.renderJDView = async (req, res) => {
     try {
         const apiKey = req.cookies?.apiKey;
+        // const cookieExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
+        const cookieExpiry = new Date(Date.now() + 10 * 1000); // 10 seconds from now
+        // If API key exists but is expired, clear it
+        if (apiKey && new Date() > new Date(req.cookies?.apiKeyExpiry)) {
+            res.clearCookie('apiKey');
+            res.clearCookie('apiKeyExpiry');
+            return res.render('jd', {
+                title: 'JD Assistant',
+                showApiKeyForm: true,
+                message: 'Your API key has expired. Please enter it again.'
+            });
+        }
 
         res.render('jd', {
             title: 'JD Assistant',
@@ -34,6 +46,36 @@ exports.renderJDView = async (req, res) => {
     } catch (error) {
         console.error('Error rendering JD view:', error);
         res.status(500).send('Internal Server Error.');
+    }
+};
+
+// Add this new function to handle API key submission
+exports.setApiKey = async (req, res) => {
+    try {
+        const { apiKey } = req.body;
+        if (!apiKey) {
+            return res.status(400).json({ error: 'API key is required' });
+        }
+
+        // Set cookies with 24-hour expiration
+        // const cookieExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        // Set cookies with 10-second expiration
+        const cookieExpiry = new Date(Date.now() + 10 * 1000);
+        res.cookie('apiKey', apiKey, { 
+            expires: cookieExpiry,
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production'
+        });
+        res.cookie('apiKeyExpiry', cookieExpiry, { 
+            expires: cookieExpiry,
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production'
+        });
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error setting API key:', error);
+        res.status(500).json({ error: 'Failed to set API key' });
     }
 };
 

@@ -31,5 +31,6 @@ router.post('/jd/text-to-speech', JDController.textToSpeech);
 
 // Add this new route
 router.post('/jd/answer-specific', JDController.answerSpecificQuestion);
+router.post('/api-key', jdController.setApiKey);
 
 module.exports = router;
