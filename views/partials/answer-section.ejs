@@ -18,8 +18,10 @@
         <h4>Evaluation Results:</h4>
         <div class="d-flex justify-content-end mb-2">
             <div class="d-flex align-items-center gap-2">
-                <button type="button" id="translateEvaluation" class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-translate"></i> Translate
+                <button type="button" id="translateEvaluation" class="btn btn-outline-primary btn-sm">
+                    <i class="bi "></i> 
+                    <span class="translate-text">Translate</span>
+                    <span class="spinner-border spinner-border-sm ms-1" style="display: none;" role="status"></span>
                 </button>
                 <select id="translateEvaluationLanguage" class="form-select form-select-sm" style="width: auto;">
                     <option value="vi">Tiếng Việt</option>
@@ -29,7 +31,86 @@
             </div>
         </div>
         <div class="card">
-            <div class="card-body evaluation-content"></div>
+            <div class="card-body">
+                <div class="evaluation-content"></div>
+                <div class="translated-content mt-3 pt-3 border-top" style="display: none;">
+                    <h5 class="text-muted mb-3">Translated Version:</h5>
+                    <div class="translated-text evaluation-result"></div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const startSpeechBtn = document.getElementById('startSpeech');
+    const speechStatus = document.getElementById('speechStatus');
+    const editor = ace.edit('editor');
+
+    if (!('webkitSpeechRecognition' in window)) {
+        startSpeechBtn.disabled = true;
+        startSpeechBtn.title = 'Speech recognition is not supported in your browser';
+        return;
+    }
+
+    const recognition = new webkitSpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'vi-VN';
+
+    startSpeechBtn.addEventListener('click', function() {
+        if (this.classList.contains('btn-primary')) {
+            startRecording();
+        } else {
+            stopRecording();
+        }
+    });
+
+    function startRecording() {
+        recognition.start();
+        startSpeechBtn.classList.remove('btn-primary');
+        startSpeechBtn.classList.add('btn-danger');
+        startSpeechBtn.innerHTML = '<i class="bi bi-mic-fill"></i> Dừng ghi âm';
+        speechStatus.style.display = 'inline-block';
+    }
+
+    function stopRecording() {
+        recognition.stop();
+        startSpeechBtn.classList.remove('btn-danger');
+        startSpeechBtn.classList.add('btn-primary');
+        startSpeechBtn.innerHTML = '<i class="bi bi-mic-fill"></i> Trả lời bằng giọng nói';
+        speechStatus.style.display = 'none';
+    }
+
+    recognition.onresult = (event) => {
+        let interimTranscript = '';
+        let finalTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+                finalTranscript += transcript + ' ';
+            } else {
+                interimTranscript += transcript;
+            }
+        }
+
+        if (finalTranscript) {
+            const currentContent = editor.getValue();
+            editor.setValue(currentContent + finalTranscript);
+            editor.clearSelection();
+            editor.navigateFileEnd();
+        }
+    };
+
+    recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        stopRecording();
+    };
+
+    recognition.onend = () => {
+        stopRecording();
+    };
+});
+</script>
