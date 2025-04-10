@@ -6,6 +6,8 @@ document.getElementById('submitAnswer')?.addEventListener('click', async functio
     
     const submitBtn = document.getElementById('submitAnswer');
     const spinner = document.getElementById('submitSpinner');
+    const evaluationSection = document.getElementById('evaluationSection');
+    const evaluationContent = document.querySelector('.evaluation-content');
 
     if (!jdText?.trim()) {
         alert('Please input a Job Description (JD) first');
@@ -23,12 +25,11 @@ document.getElementById('submitAnswer')?.addEventListener('click', async functio
     }
 
     try {
-        // Show loading state
         submitBtn.disabled = true;
         spinner.style.display = 'inline-block';
 
         const parsedQuestions = JSON.parse(questionsData);
-        const currentQuestion = parsedQuestions.questions[0].question; // Get first question for now
+        const currentQuestion = parsedQuestions.questions[0].question;
 
         const response = await fetch('/jd/evaluate-answer', {
             method: 'POST',
@@ -52,25 +53,10 @@ document.getElementById('submitAnswer')?.addEventListener('click', async functio
             throw new Error(data.error);
         }
 
-        // Create evaluation result section if it doesn't exist
-        let evaluationSection = document.getElementById('evaluationSection');
-        if (!evaluationSection) {
-            evaluationSection = document.createElement('div');
-            evaluationSection.id = 'evaluationSection';
-            evaluationSection.className = 'mt-4';
-            document.getElementById('answerSection').appendChild(evaluationSection);
-        }
-
         // Display evaluation results
-        const evaluationSection = document.getElementById('evaluationSection');
-        const evaluationContent = evaluationSection.querySelector('.evaluation-content');
-        
-        // Update content and show the section
-        evaluationContent.innerHTML = data.html;
+        evaluationContent.innerHTML = data.evaluation.html;
         evaluationSection.style.display = 'block';
-        
-        // Smooth scroll to evaluation
-        evaluationSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        evaluationSection.scrollIntoView({ behavior: 'smooth' });
 
     } catch (error) {
         console.error('Error:', error);
