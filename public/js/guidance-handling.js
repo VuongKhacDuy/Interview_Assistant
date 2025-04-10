@@ -43,15 +43,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(data.error);
             }
 
+            // Remove the custom click handler
+            // guidanceResult.addEventListener('click', function(e) {
+            //     if (e.target.classList.contains('accordion-button')) {
+            //         const isExpanded = e.target.getAttribute('aria-expanded') === 'true';
+            //         e.target.setAttribute('aria-expanded', !isExpanded);
+            //     }
+            // });
+            
             // Create accordion items for each question's guidance
-            const accordionHtml = data.guidance.map((item) => `
+            const accordionHtml = data.guidance.map((item, index) => `
                 <div class="accordion-item">
                     <h2 class="accordion-header">
                         <button class="accordion-button collapsed" type="button" 
-                                data-bs-toggle="collapse" 
-                                data-bs-target="#guidance${item.id}"
-                                aria-expanded="false" 
-                                aria-controls="guidance${item.id}">
+                                onclick="toggleGuidance('guidance${item.id}')"
+                                aria-expanded="false">
                             Question ${item.id}: ${item.question}
                         </button>
                     </h2>
@@ -66,6 +72,22 @@ document.addEventListener('DOMContentLoaded', function() {
             guidanceResult.innerHTML = accordionHtml;
             guidanceSection.style.display = 'block';
 
+            // Add toggle function to window scope
+            window.toggleGuidance = function(id) {
+                const element = document.getElementById(id);
+                const button = element.previousElementSibling.querySelector('.accordion-button');
+                
+                if (element.classList.contains('show')) {
+                    element.classList.remove('show');
+                    button.classList.add('collapsed');
+                    button.setAttribute('aria-expanded', 'false');
+                } else {
+                    element.classList.add('show');
+                    button.classList.remove('collapsed');
+                    button.setAttribute('aria-expanded', 'true');
+                }
+            };
+
             // Save original content for translation
             guidanceResult.setAttribute('data-original', JSON.stringify(data.guidance));
 
@@ -75,14 +97,6 @@ document.addEventListener('DOMContentLoaded', function() {
         } finally {
             spinner.style.display = 'none';
             guidanceBtn.disabled = false;
-        }
-    });
-
-    // Add click handler for accordion buttons
-    guidanceResult.addEventListener('click', function(e) {
-        if (e.target.classList.contains('accordion-button')) {
-            const isExpanded = e.target.getAttribute('aria-expanded') === 'true';
-            e.target.setAttribute('aria-expanded', !isExpanded);
         }
     });
 });

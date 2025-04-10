@@ -237,7 +237,7 @@ exports.answerSpecificQuestion = async (req, res) => {
         // Initialize AI service and generate answer for the specific question
         const aiService = new AIService(apiKey);
         const htmlContent = await aiService.answerSpecificQuestion(jdText, specificQuestion);
-
+        print("jhfjashfkhsjakdfhjkshdfjnxvbnzmxbcvnmbm")
         // Return the specific answer
         res.json({ specificAnswer: htmlContent });
     } catch (error) {
