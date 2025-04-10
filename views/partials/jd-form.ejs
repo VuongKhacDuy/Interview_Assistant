@@ -1,0 +1,27 @@
+<div class="container mt-4">
+    <h2 class="mb-4">Nhập JD hoặc Upload File PDF</h2>
+    <form id="jdForm" method="post" enctype="multipart/form-data" action="/jd/generate-question">
+        <div class="mb-3">
+            <textarea name="jdText" id="jdText" class="form-control" placeholder="Nhập JD ở đây..." rows="10"></textarea>
+        </div>
+        <div class="mb-3">
+            <label for="pdfFile" class="form-label">Upload File PDF</label>
+            <input type="file" name="pdfFile" id="pdfFile" accept="application/pdf" class="form-control">
+            <button type="button" id="removePdf" class="btn btn-danger btn-sm mt-2" style="display: none;">Xóa file PDF</button>
+        </div>
+        <div class="mb-3">
+            <label for="interviewLanguage" class="form-label">Chọn ngôn ngữ phỏng vấn:</label>
+            <select id="interviewLanguage" name="interviewLanguage" class="form-select">
+                <option value="vi" selected>Tiếng Việt</option>
+                <option value="en">English</option>
+                <option value="zh">中文</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <button type="submit" id="submitJD" class="btn btn-primary">
+                Cho tôi câu hỏi
+            </button>
+            <span id="jdSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;" role="status"></span>
+        </div>
+    </form>
+</div>

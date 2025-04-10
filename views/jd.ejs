@@ -11,7 +11,83 @@
     .ace_gutter {
         z-index: 0 !important;
     }
-  </style>
+
+    /* Guidance styles */
+    .guidance-container {
+        margin-top: 1rem;
+    }
+
+    .guidance-item {
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .guidance-item .card-header {
+        padding: 0;
+    }
+    
+    .guidance-item .btn-link {
+        padding: 1rem;
+        color: #212529;
+    }
+    
+    .guidance-item .btn-link:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .guidance-item .btn-link:focus {
+        box-shadow: none;
+    }
+    
+    .guidance-item .card-body {
+        padding: 1.25rem;
+    }
+    
+    .guidance-item .bi-chevron-down {
+        transition: transform 0.2s;
+    }
+    
+    .guidance-item .collapsed .bi-chevron-down {
+        transform: rotate(-90deg);
+    }
+
+    .guidance-content {
+        color: #495057;
+        line-height: 1.6;
+    }
+
+    .guidance-content p {
+        margin-bottom: 1rem;
+    }
+
+    .guidance-content ul, 
+    .guidance-content ol {
+        margin-bottom: 1rem;
+        padding-left: 1.5rem;
+    }
+
+    .guidance-content code {
+        background-color: #e9ecef;
+        padding: 0.2rem 0.4rem;
+        border-radius: 0.25rem;
+        font-family: monospace;
+    }
+    
+    .accordion-button:not(.collapsed) {
+        background-color: #e7f1ff;
+        color: #0c63e4;
+    }
+
+    .accordion-body {
+        background-color: #f8f9fa;
+    }
+
+    .accordion-button:focus {
+        box-shadow: none;
+        border-color: rgba(0,0,0,.125);
+    }
+</style>
   <!-- Bootstrap CSS để tạo giao diện đẹp -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- Choices.js CSS để tạo dropdown có tính năng tìm kiếm -->
@@ -23,755 +99,20 @@
   <!-- Bootstrap JS để tạo form submit -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+  <!-- Add before your other scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.8/purify.min.js"></script>
 </head>
 <body>
+  <%- include('partials/header', { title: title }) %>
+
   <div class="container mt-4">
-    <!-- API Key Form -->
-    <% if (showApiKeyForm) { %>
-        <div class="mb-4">
-            <h3>Enter Google API Key</h3>
-            <% if (message) { %>
-                <div class="alert alert-info" style="white-space: pre-line;"><%= message %></div>
-            <% } %>
-            <form id="apiKeyForm" class="mb-3">
-                <div class="mb-3">
-                    <input type="text" id="apiKey" class="form-control" placeholder="Enter your Google API Key" required>
-                </div>
-                <button type="submit" class="btn btn-primary">Save API Key</button>
-            </form>
-        </div>
-    <% } %>
-
-    <!-- Tiêu đề của trang -->
-    <h2 class="mb-4">Nhập JD hoặc Upload File PDF</h2>
-    
-    <!-- Form nhập JD hoặc upload PDF -->
-    <form id="jdForm" method="post" enctype="multipart/form-data" action="/jd/generate-question">
-      <!-- Textarea để nhập JD -->
-      <div class="mb-3">
-        <textarea name="jdText" id="jdText" class="form-control" placeholder="Nhập JD ở đây..." rows="10"></textarea>
-      </div>
-      <!-- Phần upload file PDF -->
-      <div class="mb-3">
-        <label for="pdfFile" class="form-label">Upload File PDF</label>
-        <input type="file" name="pdfFile" id="pdfFile" accept="application/pdf" class="form-control">
-        <!-- Nút xóa file PDF khi không cần thiết -->
-        <button type="button" id="removePdf" class="btn btn-danger btn-sm mt-2" style="display: none;">Xóa file PDF</button>
-      </div>
-      <!-- Dropdown chọn ngôn ngữ phỏng vấn toàn cầu (ví dụng: Tiếng Việt, English, 中文) -->
-      <div class="mb-3">
-        <label for="interviewLanguage" class="form-label">Chọn ngôn ngữ phỏng vấn:</label>
-        <select id="interviewLanguage" name="interviewLanguage" class="form-select" style="width: 100%;">
-          <option value="vi" selected>Tiếng Việt</option>
-          <option value="en">English</option>
-          <option value="zh">中文</option>
-          <!-- Thêm option khác nếu cần -->
-        </select>
-      </div>
-      <!-- Nút submit của form JD kèm spinner hiển thị trong lúc chờ -->
-      <div class="mb-3">
-        <button type="submit" id="submitJD" class="btn btn-primary">Cho tôi câu hỏi</button>
-        <span id="jdSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;" role="status" aria-hidden="true"></span>
-      </div>
-    </form>
-
-    <!-- Phần hiển thị câu hỏi được tạo từ server -->
-    <div id="questionSection" class="mt-4" style="display: none;">
-      <h3>Generated Question:</h3>
-      <div id="generatedQuestion" class="mb-3"></div>
-      
-      <!-- Add specific question section right after the generated question -->
-      <div id="specificQuestionSection" class="mt-3 mb-4">
-        <h4>Answer Specific Question:</h4>
-        <div class="mb-3">
-          <input type="text" id="specificQuestion" class="form-control" placeholder="Enter a specific interview question...">
-        </div>
-        <div class="mb-3">
-          <button type="button" id="getSpecificAnswer" class="btn btn-primary">
-            <i class="bi bi-question-circle"></i> Get Answer
-          </button>
-          <span id="specificAnswerSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;" role="status" aria-hidden="true"></span>
-        </div>
-        
-        <!-- Specific answer results section -->
-        <div id="specificAnswerSection" class="mt-3 mb-4" style="display: none;">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <h5 id="specificQuestionDisplay"></h5>
-            <div class="d-flex align-items-center gap-2">
-              <button type="button" id="translateSpecificAnswer" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-translate"></i> Translate
-              </button>
-              <select id="translateSpecificAnswerLanguage" class="form-select form-select-sm" style="width: auto;">
-                <option value="vi">Tiếng Việt</option>
-                <option value="en">English</option>
-                <option value="zh">中文</option>
-              </select>
-              <button type="button" id="useSpecificAnswer" class="btn btn-outline-primary btn-sm">
-                <i class="bi bi-clipboard"></i> Use This Answer
-              </button>
-            </div>
-          </div>
-          <div id="specificAnswerResult" class="p-3 border rounded bg-light"></div>
-        </div>
-      </div>
-      
-      <!-- Add guidance button -->
-      <div class="mb-3">
-        <button type="button" id="getGuidance" class="btn btn-info">
-          <i class="bi bi-lightbulb"></i> Get Answer Guidance
-        </button>
-        <span id="guidanceSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;" role="status" aria-hidden="true"></span>
-      </div>
-      
-      <!-- Guidance results section -->
-      <!-- Add after the guidance section but before the answer form -->
-      <div id="guidanceSection" class="mt-3 mb-4" style="display: none;">
-        <h4>Answer Guidance:</h4>
-        <div class="d-flex align-items-center gap-2 mb-2">
-          <button type="button" id="translateGuidance" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-translate"></i> Translate
-          </button>
-          <select id="translateLanguage" class="form-select form-select-sm" style="width: auto;">
-            <option value="vi">Tiếng Việt</option>
-            <option value="en">English</option>
-            <option value="zh">中文</option>
-          </select>
-          <span id="translateSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;" role="status" aria-hidden="true"></span>
-        </div>
-        <div id="guidanceResult" class="p-3 border rounded bg-light"></div>
-      </div>
-      
-      <!-- Add sample answer generation button -->
-      <!-- Remove the duplicate button and section -->
-      <!-- Keep only the original button but update its functionality -->
-      <div class="mb-3">
-          <button type="button" id="generateAnswer" class="btn btn-success">
-              <i class="bi bi-robot"></i> Generate Sample Answer
-          </button>
-          <span id="answerGenSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;" role="status" aria-hidden="true"></span>
-      </div>
-      
-      <!-- Update the sample answer section to use accordion -->
-      <div id="sampleAnswerSection" class="mt-3 mb-4" style="display: none;">
-          <h4>Sample Answers:</h4>
-          <div class="accordion" id="answersAccordion">
-              <!-- Questions and answers will be dynamically added here -->
-          </div>
-      </div>
-      
-      <script>
-      document.getElementById('generateAnswer')?.addEventListener('click', async function() {
-          const answerBtn = document.getElementById('generateAnswer');
-          const spinner = document.getElementById('answerGenSpinner');
-          const accordionContainer = document.getElementById('answersAccordion');
-          
-          // Disable button and show spinner
-          answerBtn.disabled = true;
-          spinner.style.display = 'inline-block';
-          
-          try {
-              const jdText = document.getElementById('hiddenJDText').value;
-              const questions = JSON.parse(document.getElementById('hiddenQuestions').value);
-              
-              // Clear existing answers
-              accordionContainer.innerHTML = '';
-              
-              // Generate answer for each question
-              for (const question of questions.questions) {
-                  // Create accordion item with correct structure
-                  const accordionItem = `
-                      <div class="accordion-item">
-                          <h2 class="accordion-header">
-                              <button class="accordion-button collapsed" 
-                                      type="button" 
-                                      data-bs-toggle="collapse" 
-                                      data-bs-target="#answer-${question.id}" 
-                                      aria-expanded="false" 
-                                      aria-controls="answer-${question.id}">
-                                  Question ${question.id}: ${question.question}
-                              </button>
-                          </h2>
-                          <div id="answer-${question.id}" 
-                               class="accordion-collapse collapse" 
-                               data-bs-parent="#answersAccordion">
-                              <div class="accordion-body">
-                                  <div class="answer-loading">
-                                      <div class="spinner-border spinner-border-sm" role="status">
-                                          <span class="visually-hidden">Loading...</span>
-                                      </div>
-                                      <span class="ms-2">Generating answer...</span>
-                                  </div>
-                                  <div class="answer-content" style="display: none;"></div>
-                              </div>
-                          </div>
-                      `;
-                      accordionContainer.innerHTML += accordionItem;
-              }
-              
-              // Show the answer section
-              document.getElementById('sampleAnswerSection').style.display = 'block';
-              
-              // Generate answers asynchronously for each question
-              for (const question of questions.questions) {
-                  try {
-                      const response = await fetch('/jd/generate-answer', {
-                          method: 'POST',
-                          headers: {
-                              'Content-Type': 'application/json'
-                          },
-                          body: JSON.stringify({
-                              jdText,
-                              question: question.question
-                          })
-                      });
-                      
-                      const data = await response.json();
-                      if (data.error) {
-                          throw new Error(data.error);
-                      }
-                      
-                      // Update the accordion item with the generated answer
-                      const accordionItem = document.querySelector(`#answer-${question.id}`);
-                      const loadingDiv = accordionItem.querySelector('.answer-loading');
-                      const contentDiv = accordionItem.querySelector('.answer-content');
-                      
-                      contentDiv.innerHTML = `
-                          <div class="d-flex justify-content-end mb-2">
-                              <button type="button" 
-                                      class="btn btn-outline-primary btn-sm me-2 use-answer" 
-                                      data-answer-id="${question.id}">
-                                  <i class="bi bi-clipboard"></i> Use This Answer
-                              </button>
-                              <button type="button" 
-                                      class="btn btn-outline-secondary btn-sm translate-answer" 
-                                      data-answer-id="${question.id}">
-                                  <i class="bi bi-translate"></i> Translate
-                              </button>
-                          </div>
-                          ${data.answer}
-                      `;
-                      
-                      // Hide loading and show content
-                      loadingDiv.style.display = 'none';
-                      contentDiv.style.display = 'block';
-                      
-                      // Add event listeners for the buttons
-                      contentDiv.querySelector('.use-answer').addEventListener('click', function() {
-                          editor.setValue(data.answer, 1);
-                      });
-                      
-                      contentDiv.querySelector('.translate-answer').addEventListener('click', async function() {
-                          const translateBtn = this;
-                          const answerContent = contentDiv;
-                          const targetLanguage = document.getElementById('translateLanguage').value;
-                          
-                          // Store original content if not already stored
-                          if (!answerContent.getAttribute('data-original')) {
-                              answerContent.setAttribute('data-original', answerContent.innerHTML);
-                          }
-                          
-                          // Toggle translation
-                          if (translateBtn.getAttribute('data-translated') === 'true') {
-                              answerContent.innerHTML = answerContent.getAttribute('data-original');
-                              translateBtn.innerHTML = '<i class="bi bi-translate"></i> Translate';
-                              translateBtn.setAttribute('data-translated', 'false');
-                          } else {
-                              try {
-                                  const response = await fetch('/jd/translate-text', {
-                                      method: 'POST',
-                                      headers: {
-                                          'Content-Type': 'application/json'
-                                      },
-                                      body: JSON.stringify({
-                                          text: answerContent.innerText,
-                                          targetLanguage,
-                                          contentType: 'answer'
-                                      })
-                                  });
-                                  
-                                  const data = await response.json();
-                                  if (data.error) {
-                                      throw new Error(data.error);
-                                  }
-                                  
-                                  answerContent.innerHTML = data.translation;
-                                  translateBtn.innerHTML = '<i class="bi bi-translate"></i> Show Original';
-                                  translateBtn.setAttribute('data-translated', 'true');
-                              } catch (err) {
-                                  console.error(err);
-                                  alert('Translation failed. Please try again.');
-                              }
-                          }
-                      });
-                  } catch (err) {
-                      console.error(`Error generating answer for question ${question.id}:`, err);
-                      const accordionItem = document.querySelector(`#answer-${question.id}`);
-                      const loadingDiv = accordionItem.querySelector('.answer-loading');
-                      const contentDiv = accordionItem.querySelector('.answer-content');
-                      
-                      loadingDiv.style.display = 'none';
-                      contentDiv.style.display = 'block';
-                      contentDiv.innerHTML = '<div class="text-danger">Failed to generate answer. Please try again.</div>';
-                  }
-          }
-      } catch (err) {
-          console.error(err);
-          alert('Failed to generate answers. Please try again.');
-      } finally {
-          // Re-enable button and hide spinner
-          answerBtn.disabled = false;
-          spinner.style.display = 'none';
-      }
-      });
-      </script>
-
-      <!-- Add this JavaScript to handle the translation button click -->
-      <script>
-        // Store the original guidance text
-        let originalGuidanceHtml = '';
-        let isCurrentlyTranslated = false;
-        
-        document.getElementById('translateGuidance')?.addEventListener('click', async function() {
-          const translateBtn = document.getElementById('translateGuidance');
-          const translateSpinner = document.getElementById('translateSpinner');
-          const translateLanguage = document.getElementById('translateLanguage').value;
-          const guidanceResult = document.getElementById('guidanceResult');
-          
-          // If already translated, revert to original
-          if (isCurrentlyTranslated) {
-            guidanceResult.innerHTML = originalGuidanceHtml;
-            translateBtn.innerHTML = '<i class="bi bi-translate"></i> Translate';
-            isCurrentlyTranslated = false;
-            return;
-          }
-          
-          // Save original content if not already saved
-          if (!originalGuidanceHtml) {
-            originalGuidanceHtml = guidanceResult.innerHTML;
-          }
-          
-          // Disable button and show spinner
-          translateBtn.disabled = true;
-          translateSpinner.style.display = 'inline-block';
-          
-          try {
-            const response = await fetch('/jd/translate-guidance', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ 
-                text: guidanceResult.innerText, 
-                targetLanguage: translateLanguage 
-              })
-            });
-            
-            const data = await response.json();
-            if (data.error) {
-              alert(data.error);
-            } else {
-              // Display translated guidance
-              guidanceResult.innerHTML = data.translation;
-              translateBtn.innerHTML = '<i class="bi bi-translate"></i> Show Original';
-              isCurrentlyTranslated = true;
-            }
-          } catch (err) {
-            console.error(err);
-            alert("An error occurred during translation. Please try again.");
-          } finally {
-            // Re-enable button and hide spinner
-            translateBtn.disabled = false;
-            translateSpinner.style.display = 'none';
-          }
-        });
-        
-        // Update translation language when interview language changes
-        document.getElementById('interviewLanguage')?.addEventListener('change', function() {
-          document.getElementById('translateLanguage').value = this.value;
-        });
-      </script>
-<script>
-document.getElementById('jdForm')?.addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const submitBtn = document.getElementById('submitJD');
-    const spinner = document.getElementById('jdSpinner');
-    
-    submitBtn.disabled = true;
-    spinner.style.display = 'inline-block';
-    
-    try {
-        const formData = new FormData(this);
-        const response = await fetch(this.action, {
-            method: 'POST',
-            body: formData
-        });
-        
-        const data = await response.json();
-        if (data.error) {
-            alert(data.error);
-            return;
-        }
-        
-        // Save data to hidden fields
-        document.getElementById('hiddenJDText').value = data.jdText;
-        document.getElementById('hiddenQuestions').value = JSON.stringify(data.questions);
-        
-        // Display formatted questions
-        document.getElementById('generatedQuestion').innerHTML = data.questionHtml;
-        document.getElementById('questionSection').style.display = 'block';
-        
-    } catch (error) {
-        console.error('Error:', error);
-        alert('An error occurred while generating questions');
-    } finally {
-        submitBtn.disabled = false;
-        spinner.style.display = 'none';
-    }
-});
-</script>
-<input type="hidden" id="hiddenJDText" value="">
-<input type="hidden" id="hiddenQuestions" value="">
-<div id="specificQuestionSection" class="mt-3 mb-4" style="display: none;">
-  <h4>Answer Specific Question:</h4>
-  <div class="mb-3">
-    <input type="text" id="specificQuestion" class="form-control" placeholder="Enter a specific interview question...">
+      <%- include('partials/api-key-form', { showApiKeyForm: showApiKeyForm, message: message }) %>
+      <%- include('partials/jd-form') %>
+      <%- include('partials/question-section') %>
+      <%- include('partials/answer-section') %>
   </div>
-  <div class="mb-3">
-    <button type="button" id="getSpecificAnswer" class="btn btn-primary">
-      <i class="bi bi-question-circle"></i> Get Answer
-    </button>
-    <span id="specificAnswerSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;" role="status" aria-hidden="true"></span>
-  </div>
-  
-  <!-- Specific answer results section -->
-  <div id="specificAnswerSection" class="mt-3 mb-4" style="display: none;">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <h5 id="specificQuestionDisplay"></h5>
-      <div class="d-flex align-items-center gap-2">
-        <button type="button" id="translateSpecificAnswer" class="btn btn-outline-secondary btn-sm">
-          <i class="bi bi-translate"></i> Translate
-        </button>
-        <select id="translateSpecificAnswerLanguage" class="form-select form-select-sm" style="width: auto;">
-          <option value="vi">Tiếng Việt</option>
-          <option value="en">English</option>
-          <option value="zh">中文</option>
-        </select>
-        <button type="button" id="useSpecificAnswer" class="btn btn-outline-primary btn-sm">
-          <i class="bi bi-clipboard"></i> Use This Answer
-        </button>
-      </div>
-    </div>
-    <div id="specificAnswerResult" class="p-3 border rounded bg-light"></div>
-  </div>
-</div>
 
-<script>
-// Add this JavaScript to handle the specific question answer functionality
-document.getElementById('getSpecificAnswer')?.addEventListener('click', async function() {
-  const specificQuestion = document.getElementById('specificQuestion').value.trim();
-  if (!specificQuestion) {
-    alert('Please enter a specific interview question');
-    return;
-  }
-  
-  const getSpecificAnswerBtn = document.getElementById('getSpecificAnswer');
-  const spinner = document.getElementById('specificAnswerSpinner');
-  
-  // Disable button and show spinner
-  getSpecificAnswerBtn.disabled = true;
-  spinner.style.display = 'inline-block';
-  
-  try {
-    const jdText = document.getElementById('hiddenJDText').value;
-    
-    const response = await fetch('/jd/answer-specific-question', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ jdText, specificQuestion })
-    });
-    
-    const data = await response.json();
-    if (data.error) {
-      alert(data.error);
-    } else {
-      // Display specific question and answer
-      document.getElementById('specificQuestionDisplay').textContent = specificQuestion;
-      document.getElementById('specificAnswerResult').innerHTML = data.specificAnswer;
-      document.getElementById('specificAnswerSection').style.display = 'block';
-      
-      // Store original answer for translation
-      window.originalSpecificAnswerHtml = data.specificAnswer;
-      window.isSpecificAnswerTranslated = false;
-    }
-  } catch (err) {
-    console.error(err);
-    alert("An error occurred. Please try again.");
-  } finally {
-    // Re-enable button and hide spinner
-    getSpecificAnswerBtn.disabled = false;
-    spinner.style.display = 'none';
-  }
-});
-
-// Handle translate specific answer button
-document.getElementById('translateSpecificAnswer')?.addEventListener('click', async function() {
-  const translateBtn = document.getElementById('translateSpecificAnswer');
-  const targetLanguage = document.getElementById('translateSpecificAnswerLanguage').value;
-  const answerResult = document.getElementById('specificAnswerResult');
-  
-  // If already translated, revert to original
-  if (window.isSpecificAnswerTranslated) {
-    answerResult.innerHTML = window.originalSpecificAnswerHtml;
-    translateBtn.innerHTML = '<i class="bi bi-translate"></i> Translate';
-    window.isSpecificAnswerTranslated = false;
-    return;
-  }
-  
-  // Disable button
-  translateBtn.disabled = true;
-  
-  try {
-    const response = await fetch('/jd/translate-text', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ 
-        text: answerResult.innerText, 
-        targetLanguage: targetLanguage,
-        contentType: 'answer'
-      })
-    });
-    
-    const data = await response.json();
-    if (data.error) {
-      alert(data.error);
-    } else {
-      // Display translated answer
-      answerResult.innerHTML = data.translation;
-      translateBtn.innerHTML = '<i class="bi bi-translate"></i> Show Original';
-      window.isSpecificAnswerTranslated = true;
-    }
-  } catch (err) {
-    console.error(err);
-    alert("An error occurred during translation. Please try again.");
-  } finally {
-    // Re-enable button
-    translateBtn.disabled = false;
-  }
-});
-
-// Handle "Use This Answer" button for specific answers
-document.getElementById('useSpecificAnswer')?.addEventListener('click', function() {
-  const specificAnswer = document.getElementById('specificAnswerResult').innerText;
-  editor.setValue(specificAnswer, 1); // Set the editor content to the specific answer
-});
-
-// No need for the observer anymore since the section is directly embedded
-</script>
-<!-- Answer Editor Section -->
-<div id="answerSection" class="mt-4">
-    <h3>Your Answer:</h3>
-    <div class="mb-3">
-        <div id="editor" style="height: 300px; width: 100%;"></div>
-    </div>
-    <div class="mb-3 d-flex gap-2">
-        <button type="button" id="startSpeech" class="btn btn-primary">
-            <i class="bi bi-mic-fill"></i> Trả lời bằng giọng nói
-        </button>
-        <span id="speechStatus" class="badge bg-danger ms-2" style="display: none;">Đang ghi âm...</span>
-        <button type="button" id="submitAnswer" class="btn btn-success">
-            <i class="bi bi-send"></i> Submit Answer
-        </button>
-        <span id="submitSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;" role="status" aria-hidden="true"></span>
-    </div>
-</div>
-
-<script>
-// Add submit answer functionality
-document.getElementById('submitAnswer')?.addEventListener('click', async function() {
-    const submitBtn = this;
-    const spinner = document.getElementById('submitSpinner');
-    const answer = editor.getValue().trim();
-    
-    if (!answer) {
-        alert('Please provide an answer before submitting');
-        return;
-    }
-    
-    // Disable button and show spinner
-    submitBtn.disabled = true;
-    spinner.style.display = 'inline-block';
-    
-    try {
-        const jdText = document.getElementById('hiddenJDText').value;
-        const questions = JSON.parse(document.getElementById('hiddenQuestions').value);
-        const currentQuestion = document.getElementById('generatedQuestion').innerText;
-        
-        const response = await fetch('/jd/evaluate-answer', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                answer,
-                jdText,
-                question: currentQuestion
-            })
-        });
-        
-        const data = await response.json();
-        if (data.error) {
-            alert(data.error);
-        } else {
-            // Create evaluation result section if not exists
-            let evaluationSection = document.getElementById('evaluationSection');
-            if (!evaluationSection) {
-                evaluationSection = document.createElement('div');
-                evaluationSection.id = 'evaluationSection';
-                evaluationSection.className = 'mt-4';
-                document.getElementById('answerSection').after(evaluationSection);
-            }
-            
-            // Display evaluation
-            evaluationSection.innerHTML = `
-                <h3>Evaluation Result:</h3>
-                <div class="p-3 border rounded bg-light">
-                    ${data.evaluation}
-                </div>
-            `;
-            evaluationSection.style.display = 'block';
-        }
-    } catch (err) {
-        console.error(err);
-        alert('Failed to evaluate answer. Please try again.');
-    } finally {
-        // Re-enable button and hide spinner
-        submitBtn.disabled = false;
-        spinner.style.display = 'none';
-    }
-});
-</script>
-
-<script>
-// Initialize ACE editor
-const editor = ace.edit("editor");
-editor.setTheme("ace/theme/monokai");
-editor.session.setMode("ace/mode/text");
-editor.setOptions({
-    fontSize: "14px"
-});
-
-// Speech recognition setup
-if ('webkitSpeechRecognition' in window) {
-    const recognition = new webkitSpeechRecognition();
-    const speechStatus = document.getElementById('speechStatus');
-    const startSpeechBtn = document.getElementById('startSpeech');
-    
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'vi-VN';
-    
-    // Update language when interview language changes
-    document.getElementById('interviewLanguage').addEventListener('change', function() {
-        const langMap = {
-            'vi': 'vi-VN',
-            'en': 'en-US',
-            'zh': 'zh-CN'
-        };
-        recognition.lang = langMap[this.value] || 'en-US';
-    });
-    
-    let finalTranscript = '';
-    
-    recognition.onresult = (event) => {
-        let interimTranscript = '';
-        
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript;
-            if (event.results[i].isFinal) {
-                finalTranscript += transcript + '\n';
-            } else {
-                interimTranscript += transcript;
-            }
-        }
-        
-        editor.setValue(finalTranscript + interimTranscript, 1);
-    };
-    
-    recognition.onstart = () => {
-        speechStatus.style.display = 'inline';
-        startSpeechBtn.classList.add('btn-danger');
-        startSpeechBtn.innerHTML = '<i class="bi bi-mic-fill"></i> Dừng ghi âm';
-    };
-    
-    recognition.onend = () => {
-        speechStatus.style.display = 'none';
-        startSpeechBtn.classList.remove('btn-danger');
-        startSpeechBtn.innerHTML = '<i class="bi bi-mic-fill"></i> Trả lời bằng giọng nói';
-    };
-    
-    let isRecording = false;
-    startSpeechBtn.addEventListener('click', () => {
-        if (!isRecording) {
-            finalTranscript = editor.getValue(); // Keep existing content
-            recognition.start();
-        } else {
-            recognition.stop();
-        }
-        isRecording = !isRecording;
-    });
-    // Add this after the existing scripts
-document.getElementById('getGuidance')?.addEventListener('click', async function() {
-    const guidanceBtn = document.getElementById('getGuidance');
-    const spinner = document.getElementById('guidanceSpinner');
-    const guidanceSection = document.getElementById('guidanceSection');
-    const guidanceResult = document.getElementById('guidanceResult');
-    
-    guidanceBtn.disabled = true;
-    spinner.style.display = 'inline-block';
-    
-    try {
-        const jdText = document.getElementById('hiddenJDText').value;
-        const questions = JSON.parse(document.getElementById('hiddenQuestions').value);
-        
-        const response = await fetch('/jd/generate-guidance', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                jdText,
-                questions: questions.questions // Make sure we're sending the questions array
-            })
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        if (data.error) {
-            throw new Error(data.error);
-        }
-        
-        guidanceResult.innerHTML = data.guidance;
-        guidanceSection.style.display = 'block';
-        
-        // Reset translation state
-        originalGuidanceHtml = data.guidance;
-        isCurrentlyTranslated = false;
-        document.getElementById('translateGuidance').innerHTML = '<i class="bi bi-translate"></i> Translate';
-        
-    } catch (err) {
-        console.error('Guidance error:', err);
-        alert('Failed to get guidance. Please try again. Error: ' + err.message);
-    } finally {
-        guidanceBtn.disabled = false;
-        spinner.style.display = 'none';
-    }
-});
-}
-</script>
+  <%- include('partials/scripts') %>
+  </body>
+  </html>

@@ -1,0 +1,14 @@
+<% if (showApiKeyForm) { %>
+    <div class="mb-4">
+        <h3>Enter Google API Key</h3>
+        <% if (message) { %>
+            <div class="alert alert-info" style="white-space: pre-line;"><%= message %></div>
+        <% } %>
+        <form id="apiKeyForm" class="mb-3">
+            <div class="mb-3">
+                <input type="text" id="apiKey" class="form-control" placeholder="Enter your Google API Key" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Save API Key</button>
+        </form>
+    </div>
+<% } %>

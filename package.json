@@ -30,6 +30,7 @@
     ]
   },
   "dependencies": {
+    "@google-cloud/text-to-speech": "^6.0.1",
     "@google/generative-ai": "^0.24.0",
     "cookie-parser": "^1.4.7",
     "dotenv": "^16.4.7",

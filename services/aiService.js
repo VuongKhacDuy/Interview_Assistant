@@ -72,26 +72,37 @@ class AIService {
             const result = await this.model.generateContent(prompt);
             const responseText = result?.response?.candidates?.[0]?.content?.parts?.map(part => part.text).join('') || '{"isValid": false, "message": "No response from AI."}';
             
-            // Try to parse the response as JSON
+            // Enhanced JSON parsing with cleanup
             let jsonResponse;
             try {
-                // Find JSON content in the response (in case there's additional text)
-                const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-                const jsonString = jsonMatch ? jsonMatch[0] : responseText;
+                // Clean up common issues that might break JSON parsing
+                let cleanedResponse = responseText
+                    .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Remove control characters
+                    .replace(/\\(?!["\\/bfnrtu])/g, '\\\\') // Fix invalid escapes
+                    .replace(/\n/g, '\\n') // Handle newlines
+                    .replace(/\r/g, '\\r'); // Handle carriage returns
+
+                // Find the JSON content (everything between the first { and last })
+                const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
+                const jsonString = jsonMatch ? jsonMatch[0] : cleanedResponse;
+
+                // Parse the cleaned JSON
                 jsonResponse = JSON.parse(jsonString);
             } catch (error) {
                 console.error("Failed to parse JSON response:", error);
-                // If parsing fails, create a fallback response with the raw text
+                console.log("Raw response:", responseText);
+                
+                // Create a fallback response
                 jsonResponse = {
                     isValid: true,
                     questions: [{
                         id: 1,
-                        question: responseText
+                        question: "Failed to parse response. Please try again."
                     }],
-                    introduction: "Generated question:"
+                    introduction: "Error parsing response"
                 };
             }
-            
+
             // Generate HTML version for backward compatibility
             let htmlContent = '';
             if (jsonResponse.isValid) {
@@ -234,52 +245,33 @@ class AIService {
      * @returns {string} HTML content with the guidance
      */
     async generateGuidance(jdText, questions) {
-        // If questions is an array, generate guidance for each question
-        if (Array.isArray(questions)) {
-            const guidancePromises = questions.map(async (q) => {
-                const prompt = `You are an expert interview coach. Based on the following job description (JD) and interview question, provide guidance on how to effectively answer this question.
+        const guidancePromises = questions.map(async (question) => {
+            const prompt = `You are an expert interview coach. Based on the following job description (JD) and interview question, provide guidance on how to effectively answer this question.
 
-                    JD: ${jdText}
+                JD: ${jdText}
 
-                    Interview Question: ${q.question}
+                Interview Question: ${question.question}
 
-                    Please provide:
-                    1. A structured approach to answering this question
-                    2. Key points that should be included in the answer
-                    3. Common mistakes to avoid
-                    4. Examples or frameworks that could be used (if applicable)
-                    5. How to tailor the answer to highlight relevant skills from the JD
+                Please provide:
+                1. Key Points to Include
+                2. Structure for Your Answer
+                3. Common Mistakes to Avoid
+                4. Example Framework (if applicable)
+                5. Relevant Skills to Highlight
 
-                    Format your response in a clear, concise manner with bullet points and sections.`;
+                Format your response in markdown with clear headings and bullet points.`;
 
-                const guidance = await this.generateContent(prompt);
-                return {
-                    id: q.id,
-                    question: q.question,
-                    guidance: guidance
-                };
-            });
-
-            const results = await Promise.all(guidancePromises);
+            const response = await this.model.generateContent(prompt);
+            const guidance = response?.response?.candidates?.[0]?.content?.parts?.[0]?.text || 'No guidance generated.';
             
-            // Format all guidance into a single HTML document
-            let combinedHtml = '<div class="guidance-container">';
-            for (const result of results) {
-                combinedHtml += `
-                    <div class="guidance-item mb-4">
-                        <h4>Question ${result.id}: ${result.question}</h4>
-                        <div class="guidance-content">${result.guidance}</div>
-                    </div>
-                `;
-            }
-            combinedHtml += '</div>';
-            
-            return combinedHtml;
-        } else {
-            // Handle single question case (backward compatibility)
-            const prompt = `You are an expert interview coach...`;
-            return this.generateContent(prompt);
-        }
+            return {
+                id: question.id,
+                question: question.question,
+                guidance: guidance
+            };
+        });
+    
+        return Promise.all(guidancePromises);
     }
 
     /**

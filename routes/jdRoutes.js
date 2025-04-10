@@ -25,6 +25,7 @@ router.post('/jd/translate-guidance', JDController.translateGuidance);
 // Add these new routes
 router.post('/jd/generate-answer', JDController.generateAnswer);
 router.post('/jd/translate-text', JDController.translateText);
+router.post('/jd/text-to-speech', JDController.textToSpeech);
 
 // Add this new route
 router.post('/jd/answer-specific-question', JDController.answerSpecificQuestion);

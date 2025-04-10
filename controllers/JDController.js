@@ -1,6 +1,11 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { marked } = require('marked');
 const pdfParse = require('pdf-parse');
+const { synthesizeSpeech } = require('../utils/ttsUtils');
+const AIService = require('../services/aiService');
+const RateLimiter = require('../utils/rateLimiter');
+const { getLanguageName } = require('../utils/languageUtils');
+const { extractTextFromPdf } = require('../utils/pdfUtils');
 
 // Get API key from .env environment variable (GEN_API_KEY)
 const GEN_API_KEY = process.env.GEN_API_KEY;
@@ -10,11 +15,6 @@ if (!GEN_API_KEY) {
 
 // Map to save user cooldown status (based on IP)
 const userCooldowns = new Map();
-
-const AIService = require('../services/aiService');
-const RateLimiter = require('../utils/rateLimiter');
-const { getLanguageName } = require('../utils/languageUtils');
-const { extractTextFromPdf } = require('../utils/pdfUtils');
 
 // Create a rate limiter instance
 const rateLimiter = new RateLimiter(5000); // 5 seconds cooldown
@@ -53,6 +53,7 @@ const checkApiKey = (req, res) => {
     return apiKey;
 };
 
+
 exports.generateQuestion = async (req, res) => {
     try {
         const apiKey = checkApiKey(req, res);
@@ -60,6 +61,15 @@ exports.generateQuestion = async (req, res) => {
 
         let { jdText, interviewLanguage } = req.body;
         
+        // Keep only one rate limit check
+        const rateLimit = rateLimiter.checkLimit(req.ip);
+        if (rateLimit.isLimited) {
+            return res.status(429).json({ 
+                error: `Vui lòng đợi ${rateLimit.remainingTime} giây trước khi gửi yêu cầu mới.`,
+                remainingTime: rateLimit.remainingTime
+            });
+        }
+
         // If user uploads PDF file, prioritize reading content from file
         if (req.file) {
             jdText = await extractTextFromPdf(req.file.buffer);
@@ -74,21 +84,11 @@ exports.generateQuestion = async (req, res) => {
             interviewLanguage = 'vi';
         }
 
-        // Check rate limiting
-        const rateLimit = rateLimiter.checkLimit(req.ip);
-        if (rateLimit.isLimited) {
-            return res.status(429).json({ 
-                error: `Please wait ${rateLimit.remainingTime} seconds before sending a new request.` 
-            });
-        }
-
         const targetLanguage = getLanguageName(interviewLanguage);
         
-        // Initialize AI service and generate questions
         const aiService = new AIService(apiKey);
         const result = await aiService.generateQuestion(jdText, targetLanguage);
 
-        // Return both JSON and HTML formats along with the original JD content
         res.json({ 
             questions: result.json,
             questionHtml: result.html,
@@ -124,13 +124,22 @@ exports.evaluateAnswer = async (req, res) => {
 
 exports.generateGuidance = async (req, res) => {
     try {
+        const apiKey = checkApiKey(req, res);
+        if (!apiKey) return;
+
         const { jdText, questions } = req.body;
-        const aiService = new AIService(req.cookies.apiKey);
-        const guidance = await aiService.generateGuidance(jdText, questions);
-        res.json({ guidance });
+        if (!jdText || !questions) {
+            return res.status(400).json({ error: 'JD text and questions are required.' });
+        }
+
+        const aiService = new AIService(apiKey);
+        const guidanceResults = await aiService.generateGuidance(jdText, questions);
+
+        // Return array of guidance for each question
+        res.json({ guidance: guidanceResults });
     } catch (error) {
         console.error('Error generating guidance:', error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: 'Failed to generate guidance.' });
     }
 };
 
@@ -234,5 +243,25 @@ exports.answerSpecificQuestion = async (req, res) => {
     } catch (error) {
         console.error('Error generating specific answer:', error);
         res.status(500).json({ error: 'Failed to generate specific answer.' });
+    }
+};
+
+exports.textToSpeech = async (req, res) => {
+    try {
+        const apiKey = checkApiKey(req, res);
+        if (!apiKey) return;
+
+        const { text, language } = req.body;
+        if (!text) {
+            return res.status(400).json({ error: 'Text is required.' });
+        }
+
+        const audioContent = await synthesizeSpeech(text, language);
+        
+        res.set('Content-Type', 'audio/mpeg');
+        res.send(audioContent);
+    } catch (error) {
+        console.error('TTS Error:', error);
+        res.status(500).json({ error: 'Failed to convert text to speech.' });
     }
 };
