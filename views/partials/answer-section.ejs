@@ -16,6 +16,18 @@
     <!-- Add evaluation section -->
     <div id="evaluationSection" class="mt-4" style="display: none;">
         <h4>Evaluation Results:</h4>
+        <div class="d-flex justify-content-end mb-2">
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" id="translateEvaluation" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-translate"></i> Translate
+                </button>
+                <select id="translateEvaluationLanguage" class="form-select form-select-sm" style="width: auto;">
+                    <option value="vi">Tiếng Việt</option>
+                    <option value="en">English</option>
+                    <option value="zh">中文</option>
+                </select>
+            </div>
+        </div>
         <div class="card">
             <div class="card-body evaluation-content"></div>
         </div>

@@ -160,10 +160,8 @@ exports.generateAnswer = async (req, res) => {
 
 exports.translateText = async (req, res) => {
     try {
-        const apiKey = req.cookies?.apiKey;
-        if (!apiKey) {
-            return res.status(400).json({ error: 'API key is required.' });
-        }
+        const apiKey = checkApiKey(req, res);
+        if (!apiKey) return;
 
         const { text, targetLanguage, contentType } = req.body;
         if (!text || !targetLanguage) {
@@ -172,10 +170,9 @@ exports.translateText = async (req, res) => {
         
         const aiService = new AIService(apiKey);
         const languageName = getLanguageName(targetLanguage);
-        const htmlContent = await aiService.translateText(text, languageName, contentType);
+        const result = await aiService.translateText(text, languageName, contentType);
 
-        // Return the translated text
-        res.json({ translation: htmlContent, type: contentType || 'text' });
+        res.json({ translation: result });
     } catch (error) {
         console.error('Error translating text:', error);
         res.status(500).json({ error: 'Failed to translate text.' });

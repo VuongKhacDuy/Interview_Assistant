@@ -66,3 +66,44 @@ document.getElementById('submitAnswer')?.addEventListener('click', async functio
         spinner.style.display = 'none';
     }
 });
+
+document.getElementById('translateEvaluation')?.addEventListener('click', async function() {
+    const evaluationContent = document.querySelector('.evaluation-content');
+    const originalText = evaluationContent.getAttribute('data-original') || evaluationContent.innerHTML;
+    const targetLanguage = document.getElementById('translateEvaluationLanguage').value;
+    const translateBtn = this;
+    
+    try {
+        // Save original content if not already saved
+        if (!evaluationContent.getAttribute('data-original')) {
+            evaluationContent.setAttribute('data-original', originalText);
+        }
+
+        translateBtn.disabled = true;
+        
+        const response = await fetch('/jd/translate-text', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                text: originalText,
+                targetLanguage: targetLanguage,
+                contentType: 'evaluation'
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        evaluationContent.innerHTML = data.translation;
+
+    } catch (error) {
+        console.error('Translation error:', error);
+        alert('Failed to translate. Please try again.');
+    } finally {
+        translateBtn.disabled = false;
+    }
+});

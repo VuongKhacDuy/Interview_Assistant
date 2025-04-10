@@ -25,5 +25,5 @@ window.getEditorContent = function() {
 
 // Set editor content
 window.setEditorContent = function(content) {
-    editor.setValue(content, -1); // -1 moves cursor to start
+    editor.setValue(content, -1);
 };
