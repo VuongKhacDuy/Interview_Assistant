@@ -43,14 +43,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(data.error);
             }
 
-            // Remove the custom click handler
-            // guidanceResult.addEventListener('click', function(e) {
-            //     if (e.target.classList.contains('accordion-button')) {
-            //         const isExpanded = e.target.getAttribute('aria-expanded') === 'true';
-            //         e.target.setAttribute('aria-expanded', !isExpanded);
-            //     }
-            // });
-            
             // Create accordion items for each question's guidance
             const accordionHtml = data.guidance.map((item, index) => `
                 <div class="accordion-item">
@@ -99,4 +91,106 @@ document.addEventListener('DOMContentLoaded', function() {
             guidanceBtn.disabled = false;
         }
     });
+});
+
+// Add translation handler
+document.getElementById('translateGuidance')?.addEventListener('click', async function() {
+    const button = this;
+    const targetLang = document.getElementById('translateGuidanceLanguage').value;
+    const guidanceResult = document.getElementById('guidanceResult');
+    const originalContent = JSON.parse(guidanceResult.getAttribute('data-original') || '[]');
+    
+    const isShowingOriginal = button.innerHTML.includes('Show Original');
+    
+    if (isShowingOriginal) {
+        // Show original content
+        const originalHtml = originalContent.map((item) => `
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" 
+                            onclick="toggleGuidance('guidance${item.id}')"
+                            aria-expanded="false">
+                        Question ${item.id}: ${item.question}
+                    </button>
+                </h2>
+                <div id="guidance${item.id}" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+                        ${marked.parse(item.guidance)}
+                    </div>
+                </div>
+            </div>
+        `).join('');
+        
+        guidanceResult.innerHTML = originalHtml;
+        button.innerHTML = '<i class="bi bi-translate"></i> Translate';
+        button.classList.remove('btn-primary');
+        button.classList.add('btn-outline-primary');
+        return;
+    }
+    
+    // Change button style to loading state
+    button.classList.remove('btn-outline-primary');
+    button.classList.add('btn-primary');
+    button.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Translating...';
+    button.disabled = true;
+    
+    try {
+        // Translate each guidance item
+        const translationPromises = originalContent.map(async (item) => {
+            // Update the translation request
+            const response = await fetch('/jd/translate-text', {  // Changed from '/jd/translate-guidance'
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    text: item.guidance,
+                    targetLanguage: targetLang,
+                    contentType: 'guidance'  // Add contentType
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            return {
+                ...item,
+                guidance: data.translation
+            };
+        });
+        
+        const translatedItems = await Promise.all(translationPromises);
+        
+        // Update the guidance content with translations
+        const translatedHtml = translatedItems.map((item) => `
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" 
+                            onclick="toggleGuidance('guidance${item.id}')"
+                            aria-expanded="false">
+                        Question ${item.id}: ${item.question}
+                    </button>
+                </h2>
+                <div id="guidance${item.id}" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+                        ${item.guidance}
+                    </div>
+                </div>
+            </div>
+        `).join('');
+        
+        guidanceResult.innerHTML = translatedHtml;
+        button.innerHTML = '<i class="bi bi-translate"></i> Show Original';
+        
+    } catch (error) {
+        console.error('Translation error:', error);
+        alert('Failed to translate. Please try again.');
+        button.innerHTML = '<i class="bi bi-translate"></i> Translate';
+    } finally {
+        button.classList.remove('btn-primary');
+        button.classList.add('btn-outline-primary');
+        button.disabled = false;
+    }
 });
