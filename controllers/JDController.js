@@ -136,33 +136,24 @@ exports.generateGuidance = async (req, res) => {
     }
 };
 
+// Controller calls AIService
 exports.generateAnswer = async (req, res) => {
     try {
-        const apiKey = checkApiKey(req, res);
-        if (!apiKey) return;
-
-        const { jdText, questions, guidance } = req.body;
-        if (!jdText || !questions || !Array.isArray(questions)) {
-            return res.status(400).json({ error: 'JD and array of questions are required.' });
+        const apiKey = req.cookies?.apiKey;
+        if (!apiKey) {
+            return res.status(400).json({ error: 'API key is required.' });
         }
 
-        // Initialize AI service
-        const aiService = new AIService(apiKey);
-        
-        // Generate answers for all questions
-        const answers = await Promise.all(questions.map(async (question) => {
-            const htmlContent = await aiService.generateAnswer(jdText, question, guidance);
-            return {
-                questionId: question.id,
-                question: question.question,
-                answer: htmlContent
-            };
-        }));
+        const { jdText, questions } = req.body;
+        if (!jdText || !questions) {
+            return res.status(400).json({ error: 'JD text and questions are required.' });
+        }
 
-        // Return all answers
-        res.json({ answers });
+        const aiService = new AIService(apiKey);
+        const result = await aiService.generateAnswer(jdText, questions);
+        res.json(result); // Pass through the result directly
     } catch (error) {
-        console.error('Error generating answers:', error);
+        console.error('Error generating answer:', error);
         res.status(500).json({ error: 'Failed to generate answers.' });
     }
 };

@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Handle successful response
             if (data.questions && data.questionHtml) {
                 document.getElementById('hiddenJDText').value = data.jdText || '';
+                console.log('Stored JD Text:', data.jdText); // Add this debug line
                 document.getElementById('hiddenQuestions').value = JSON.stringify(data.questions);
                 document.getElementById('generatedQuestion').innerHTML = data.questionHtml;
                 document.getElementById('questionSection').style.display = 'block';

@@ -30,7 +30,8 @@ document.getElementById('jdForm')?.addEventListener('submit', async function(e) 
         
         // Save JD text and questions to hidden fields
         document.getElementById('hiddenJDText').value = data.jdText;
-        document.getElementById('hiddenQuestions').value = JSON.stringify(data.questions);
+        // When storing questions
+        hiddenQuestions.value = JSON.stringify(data.questions);
         
         // Format and display questions
         const questionsHtml = data.questions.questions.map((q, index) => `
@@ -209,7 +210,13 @@ document.addEventListener('DOMContentLoaded', function() {
     window.handleQuestionGenerated = function(data) {
         if (data.questions && data.questionHtml) {
             // Store the JD text and questions for later use
-            hiddenJDText.value = data.jdText || '';
+            const hiddenJDText = document.getElementById('hiddenJDText');
+            if (hiddenJDText) {
+                hiddenJDText.value = data.jdText || '';
+                console.log('JD Text stored:', hiddenJDText.value);
+            } else {
+                console.error('Hidden JD Text field not found');
+            }
             hiddenQuestions.value = JSON.stringify(data.questions);
 
             // Display the questions

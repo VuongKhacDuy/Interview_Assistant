@@ -23,6 +23,7 @@ router.post('/jd/generate-guidance', JDController.generateGuidance);
 router.post('/jd/translate-guidance', JDController.translateGuidance);
 
 // Add these new routes
+// Routes the request to JDController
 router.post('/jd/generate-answer', JDController.generateAnswer);
 router.post('/jd/translate-text', JDController.translateText);
 router.post('/jd/translate-guidance', JDController.translateGuidance);

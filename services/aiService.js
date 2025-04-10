@@ -282,26 +282,26 @@ class AIService {
      * @returns {string} HTML content with the sample answer
      */
     async generateAnswer(jdText, questions, guidance = '') {
-        // Handle array of questions
         if (Array.isArray(questions)) {
             const answerPromises = questions.map(async (q) => {
-                const prompt = `You are an expert candidate interviewing for a position. Based on the following job description (JD), interview question, and guidance (if provided), generate a high-quality sample answer.
-
-                    JD: ${jdText}
-
-                    Interview Question: ${q.question}
-                    
-                    ${guidance ? `Guidance: ${guidance}` : ''}
-
-                    Please provide a comprehensive, well-structured answer that:
-                    1. Directly addresses the question
-                    2. Demonstrates relevant skills and experience
-                    3. Uses specific examples where appropriate
-                    4. Aligns with the requirements in the job description
-                    5. Shows enthusiasm and cultural fit
-
-                    Format your response as if you are the candidate speaking in an interview. Make it sound natural and conversational while being professional.`;
-
+                const prompt = `Based on this exact Job Description:
+    ${jdText}
+    
+    As a professional matching these requirements, answer this interview question:
+    
+    Question: ${q.question}
+    
+    Structure your answer to:
+    1. Use the exact technologies, skills, and requirements mentioned in this JD
+    2. Show experience level matching the JD requirements
+    3. Follow STAR method with examples specific to this role:
+       - Situation: Use scenario relevant to this job's industry
+       - Task: Address challenges mentioned in the JD
+       - Action: Apply skills listed in the JD
+       - Result: Show impacts relevant to the role's requirements
+    
+    For technical questions, use examples with the specific technologies mentioned in the JD.`;
+    
                 const answer = await this.generateContent(prompt);
                 return {
                     id: q.id,
@@ -309,52 +309,27 @@ class AIService {
                     answer: answer
                 };
             });
-
-            const results = await Promise.all(answerPromises);
-            
-            // Format all answers into a single HTML document
-            let combinedHtml = '<div class="sample-answers-container">';
-            for (const result of results) {
-                combinedHtml += `
-                    <div class="sample-answer-item mb-4">
-                        <h4>Question ${result.id}: ${result.question}</h4>
-                        <div class="sample-answer-content">${result.answer}</div>
-                    </div>
-                `;
-            }
-            combinedHtml += '</div>';
-            
-            return combinedHtml;
+    
+            const answers = await Promise.all(answerPromises);
+            return { answers }; // Return in the format expected by frontend
         } else {
-            // Handle single question case (backward compatibility)
-            const prompt = `You are an expert candidate...`;
-            return this.generateContent(prompt);
+            // Handle single question case
+            const prompt = `Based on this Job Description:
+    ${jdText}
+    
+    Answer this interview question:
+    ${questions}
+    
+    Use the exact requirements and skills from the JD in your answer.`;
+            const answer = await this.generateContent(prompt);
+            return { 
+                answers: [{
+                    id: 1,
+                    question: questions,
+                    answer: answer
+                }]
+            };
         }
-    }
-
-    /**
-     * Generate an answer for a specific interview question
-     * @param {string} jdText - Job description text
-     * @param {string} specificQuestion - The specific interview question
-     * @returns {string} HTML content with the answer
-     */
-    async answerSpecificQuestion(jdText, specificQuestion) {
-        const prompt = `You are an expert candidate interviewing for a position. Based on the following job description (JD) and specific interview question, generate a high-quality answer.
-
-            JD: ${jdText}
-
-            Specific Interview Question: ${specificQuestion}
-
-            Please provide a comprehensive, well-structured answer that:
-            1. Directly addresses the question
-            2. Demonstrates relevant skills and experience that match the JD
-            3. Uses specific examples where appropriate
-            4. Aligns with the requirements in the job description
-            5. Shows enthusiasm and cultural fit
-
-            Format your response as if you are the candidate speaking in an interview. Make it sound natural and conversational while being professional.`;
-
-        return this.generateContent(prompt);
     }
 
     /**
