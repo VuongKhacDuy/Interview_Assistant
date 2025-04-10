@@ -9,7 +9,7 @@ document.getElementById('jdForm')?.addEventListener('submit', async function(e) 
     try {
         const formData = new FormData(this);
         
-        // Create a timeout promise
+        // Create a timeout promise that rejects after 60 seconds
         const timeout = new Promise((_, reject) => 
             setTimeout(() => reject(new Error('Request timeout')), 60000)
         );
@@ -47,9 +47,9 @@ document.getElementById('jdForm')?.addEventListener('submit', async function(e) 
         
     } catch (error) {
         console.error('Error:', error);
-        // Only show alert if it's a timeout or if the request completely failed
-        if (error.message === 'Request timeout' || error.name === 'TypeError') {
-            alert('Không thể lấy được dữ liệu. Vui lòng thử lại.');
+        // Only show alert for timeout
+        if (error.message === 'Request timeout') {
+            alert('Không thể lấy được câu hỏi. Vui lòng thử lại.');
         }
     } finally {
         submitBtn.disabled = false;

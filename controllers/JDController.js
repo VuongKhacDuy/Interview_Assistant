@@ -61,15 +61,8 @@ exports.generateQuestion = async (req, res) => {
 
         let { jdText, interviewLanguage } = req.body;
         
-        // Keep only one rate limit check
-        const rateLimit = rateLimiter.checkLimit(req.ip);
-        if (rateLimit.isLimited) {
-            return res.status(429).json({ 
-                error: `Vui lòng đợi ${rateLimit.remainingTime} giây trước khi gửi yêu cầu mới.`,
-                remainingTime: rateLimit.remainingTime
-            });
-        }
-
+        // Remove rate limit check and message
+        
         // If user uploads PDF file, prioritize reading content from file
         if (req.file) {
             jdText = await extractTextFromPdf(req.file.buffer);
@@ -185,8 +178,7 @@ exports.translateText = async (req, res) => {
         if (!text || !targetLanguage) {
             return res.status(400).json({ error: 'Text and target language are required.' });
         }
-
-        // Initialize AI service and translate text
+        
         const aiService = new AIService(apiKey);
         const languageName = getLanguageName(targetLanguage);
         const htmlContent = await aiService.translateText(text, languageName, contentType);
@@ -237,7 +229,7 @@ exports.answerSpecificQuestion = async (req, res) => {
             return res.status(400).json({ error: 'Missing JD text or question' });
         }
 
-        const aiService = new AIService(apiKey);  // Use API key from cookies
+        const aiService = new AIService(apiKey);
         const answer = await aiService.answerSpecificQuestion(jdText, question);
         
         res.json({ answer });
