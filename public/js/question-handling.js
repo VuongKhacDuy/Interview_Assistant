@@ -67,7 +67,7 @@ document.getElementById('getSpecificAnswer')?.addEventListener('click', async fu
         return;
     }
 
-    const button = document.getElementById('getSpecificAnswer');
+    const button = this;
     const spinner = document.getElementById('specificAnswerSpinner');
     const answerSection = document.getElementById('specificAnswerSection');
     const questionDisplay = document.getElementById('specificQuestionDisplay');
@@ -77,17 +77,14 @@ document.getElementById('getSpecificAnswer')?.addEventListener('click', async fu
     spinner.style.display = 'inline-block';
 
     try {
-        const response = await fetch('/jd/generate-answer', {
+        const response = await fetch('/jd/answer-specific', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 jdText,
-                questions: [{
-                    id: 'specific',
-                    question: specificQuestion
-                }]
+                question: specificQuestion
             })
         });
 
@@ -96,13 +93,10 @@ document.getElementById('getSpecificAnswer')?.addEventListener('click', async fu
         }
 
         const data = await response.json();
-        if (data.error) {
-            throw new Error(data.error);
-        }
-
+        
         // Display the results
         questionDisplay.textContent = specificQuestion;
-        answerResult.innerHTML = data.answers[0].answer;
+        answerResult.innerHTML = data.answer;
         answerSection.style.display = 'block';
 
     } catch (error) {

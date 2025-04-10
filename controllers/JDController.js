@@ -226,23 +226,24 @@ exports.translateGuidance = async (req, res) => {
 
 exports.answerSpecificQuestion = async (req, res) => {
     try {
-        const apiKey = checkApiKey(req, res);
-        if (!apiKey) return;
-
-        const { jdText, specificQuestion } = req.body;
-        if (!jdText || !specificQuestion) {
-            return res.status(400).json({ error: 'JD and specific question are required.' });
+        const apiKey = req.cookies?.apiKey;
+        if (!apiKey) {
+            return res.status(400).json({ error: 'API key is required' });
         }
 
-        // Initialize AI service and generate answer for the specific question
-        const aiService = new AIService(apiKey);
-        const htmlContent = await aiService.answerSpecificQuestion(jdText, specificQuestion);
-        print("jhfjashfkhsjakdfhjkshdfjnxvbnzmxbcvnmbm")
-        // Return the specific answer
-        res.json({ specificAnswer: htmlContent });
+        const { jdText, question } = req.body;
+        
+        if (!jdText || !question) {
+            return res.status(400).json({ error: 'Missing JD text or question' });
+        }
+
+        const aiService = new AIService(apiKey);  // Use API key from cookies
+        const answer = await aiService.answerSpecificQuestion(jdText, question);
+        
+        res.json({ answer });
     } catch (error) {
         console.error('Error generating specific answer:', error);
-        res.status(500).json({ error: 'Failed to generate specific answer.' });
+        res.status(500).json({ error: 'Failed to generate answer' });
     }
 };
 

@@ -28,6 +28,6 @@ router.post('/jd/translate-text', JDController.translateText);
 router.post('/jd/text-to-speech', JDController.textToSpeech);
 
 // Add this new route
-router.post('/jd/answer-specific-question', JDController.answerSpecificQuestion);
+router.post('/jd/answer-specific', JDController.answerSpecificQuestion);
 
 module.exports = router;
