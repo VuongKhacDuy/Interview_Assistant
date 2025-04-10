@@ -332,21 +332,58 @@ class AIService {
         }
     }
 
-    /**
-     * Translate text to a target language
-     * @param {string} text - Text to translate
-     * @param {string} targetLanguage - Target language name (e.g., "Vietnamese")
-     * @param {string} contentType - Type of content being translated
-     * @returns {string} HTML content with the translated text
-     */
+    async answerSpecificQuestion(jdText, question) {
+        const prompt = `Based on this Job Description:
+    ${jdText}
+
+    Please provide a detailed answer to this specific interview question:
+    ${question}
+
+    Structure your answer to:
+    1. Directly address the question
+    2. Use relevant experience and skills from the JD
+    3. Follow the STAR method where applicable:
+       - Situation: Context relevant to the role
+       - Task: Specific challenges
+       - Action: Steps taken using skills from JD
+       - Result: Measurable outcomes
+
+    If it's a technical question, include specific examples using technologies mentioned in the JD.`;
+
+        try {
+            const result = await this.model.generateContent(prompt);
+            const rawAnswer = result?.response?.candidates?.[0]?.content?.parts?.map(part => part.text).join('') || '';
+            const htmlAnswer = marked(rawAnswer); // Convert markdown to HTML
+            
+            return {
+                success: true,
+                question: question,
+                answer: htmlAnswer
+            };
+        } catch (error) {
+            console.error('Error generating specific answer:', error);
+            return {
+                success: false,
+                error: 'Failed to generate answer'
+            };
+        }
+    }
+    
     async translateText(text, targetLanguage, contentType = 'text') {
         const prompt = `Translate the following ${contentType} to ${targetLanguage}. Maintain all formatting, including markdown, bullet points, and numbered lists:
-
-${text}
-
-Translation:`;
-
-        return this.generateContent(prompt);
+    
+        ${text}
+    
+        Translation:`;
+    
+        try {
+            const result = await this.model.generateContent(prompt);
+            const rawMarkdown = result?.response?.candidates?.[0]?.content?.parts?.map(part => part.text).join('') || 'Translation failed.';
+            return marked(rawMarkdown);
+        } catch (error) {
+            console.error('Translation error:', error);
+            throw new Error('Failed to translate text');
+        }
     }
 }
 
