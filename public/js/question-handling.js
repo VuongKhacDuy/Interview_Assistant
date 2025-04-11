@@ -59,6 +59,11 @@ document.getElementById('jdForm')?.addEventListener('submit', async function(e) 
 });
 
 // Add specific question handling
+// Add state management for translation
+let isTranslated = false;
+const translateBtn = document.getElementById('translateSpecificAnswer');
+
+// Update the specific answer handling
 document.getElementById('getSpecificAnswer')?.addEventListener('click', async function() {
     const specificQuestion = document.getElementById('specificQuestion').value;
     const jdText = document.getElementById('hiddenJDText').value;
@@ -95,9 +100,15 @@ document.getElementById('getSpecificAnswer')?.addEventListener('click', async fu
 
         const data = await response.json();
         
+        // Reset translation state for new answer
+        isTranslated = false;
+        translateBtn.innerHTML = '<i class="bi bi-translate"></i> Translate';
+        
         // Display the results
         questionDisplay.textContent = specificQuestion;
         answerResult.innerHTML = data.answer;
+        // Store the original answer for translation
+        answerResult.setAttribute('data-original', data.answer);
         answerSection.style.display = 'block';
 
     } catch (error) {
