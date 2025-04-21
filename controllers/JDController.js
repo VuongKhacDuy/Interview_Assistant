@@ -296,23 +296,24 @@ exports.generateCoverLetter = async (req, res) => {
         const apiKey = checkApiKey(req, res);
         if (!apiKey) return;
 
-        const { jdText } = req.body;
+        const { jdText, userInfo } = req.body;
+        
         if (!jdText) {
-            return res.status(400).json({
-                success: false,
-                error: 'JD text is required'
-            });
+            return res.status(400).json({ error: 'JD text is required.' });
         }
 
-        const aiService = new AIService(apiKey);
-        const result = await aiService.generateCoverLetter(jdText);
+        if (!userInfo) {
+            return res.status(400).json({ error: 'User information is required.' });
+        }
 
+        // Initialize AI service and generate cover letter
+        const aiService = new AIService(apiKey);
+        const result = await aiService.generateCoverLetter(jdText, userInfo);
+
+        // Return the cover letter
         res.json(result);
     } catch (error) {
         console.error('Error generating cover letter:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message || 'Failed to generate cover letter'
-        });
+        res.status(500).json({ error: 'Failed to generate cover letter.' });
     }
 };

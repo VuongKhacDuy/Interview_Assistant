@@ -2,22 +2,115 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3>Cover Letter</h3>
         <div class="d-flex gap-2">
-            <select id="translateCoverLetterLanguage" class="form-select">
+            <select id="translateCoverLetterLanguage" class="form-select form-select-sm" style="width: auto;">
                 <option value="vi">Tiếng Việt</option>
                 <option value="en">English</option>
                 <option value="zh">中文</option>
             </select>
-            <button id="generateCoverLetter" class="btn btn-primary">
+            <button id="generateCoverLetter" class="btn btn-primary btn-sm">
                 <i class="bi bi-file-text"></i> Generate Cover Letter
             </button>
-            <button id="translateCoverLetter" class="btn btn-outline-primary" style="display: none;">
+            <button id="translateCoverLetter" class="btn btn-outline-primary btn-sm" style="display: none;">
                 <i class="bi bi-translate"></i> Translate
             </button>
         </div>
     </div>
+
+    <!-- Add user information form -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <form id="coverLetterForm" class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Your Full Name</label>
+                    <input type="text" class="form-control form-control-sm" id="fullName" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Your Email</label>
+                    <input type="email" class="form-control form-control-sm" id="email" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Your Phone</label>
+                    <input type="tel" class="form-control form-control-sm" id="phone" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Position Applied For</label>
+                    <input type="text" class="form-control form-control-sm" id="position" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Recipient's Name</label>
+                    <input type="text" class="form-control form-control-sm" id="recipientName" placeholder="Mr./Ms. Last Name">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Company Name</label>
+                    <input type="text" class="form-control form-control-sm" id="companyName" required>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div id="coverLetterResult" class="card" style="display: none;">
         <div class="card-body">
             <div class="cover-letter-content"></div>
         </div>
     </div>
 </div>
+
+<script>
+document.getElementById('generateCoverLetter').addEventListener('click', async function() {
+    const button = this;
+    const originalText = button.innerHTML;
+
+    // Validate required fields
+    const form = document.getElementById('coverLetterForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    // Show loading state
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generating...';
+
+    const userInfo = {
+        fullName: document.getElementById('fullName').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        position: document.getElementById('position').value.trim(),
+        recipientName: document.getElementById('recipientName').value.trim(),
+        companyName: document.getElementById('companyName').value.trim()
+    };
+
+    const jdText = document.getElementById('jdText').value;
+    if (!jdText) {
+        alert('Please enter the job description first.');
+        return;
+    }
+
+    try {
+        // Change from '/generate-cover-letter' to '/jd/generate-cover-letter'
+        const response = await fetch('/jd/generate-cover-letter', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ jdText, userInfo })
+        });
+    
+        const data = await response.json();
+        if (data.success) {
+            document.querySelector('.cover-letter-content').innerHTML = data.coverLetter;
+            document.getElementById('coverLetterResult').style.display = 'block';
+            document.getElementById('translateCoverLetter').style.display = 'inline-block';
+        } else {
+            alert(data.error || 'Failed to generate cover letter');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to generate cover letter');
+    } finally {
+        // Restore button state
+        button.disabled = false;
+        button.innerHTML = originalText;
+    }
+});
+</script>

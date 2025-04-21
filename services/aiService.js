@@ -20,9 +20,21 @@ class AIService {
      * @returns {string} HTML content generated from markdown response
      */
     async generateContent(prompt) {
-        const result = await this.model.generateContent(prompt);
-        const rawMarkdown = result?.response?.candidates?.[0]?.content?.parts?.map(part => part.text).join('') || 'No response from AI.';
-        return marked(rawMarkdown);
+        try {
+            const result = await this.model.generateContent(prompt);
+            const rawMarkdown = result?.response?.candidates?.[0]?.content?.parts?.map(part => part.text).join('') || 'No response from AI.';
+            return marked(rawMarkdown);
+        } catch (error) {
+            // Add retry logic for 503 errors
+            if (error.status === 503) {
+                // Wait for 2 seconds and try again
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                const result = await this.model.generateContent(prompt);
+                const rawMarkdown = result?.response?.candidates?.[0]?.content?.parts?.map(part => part.text).join('') || 'No response from AI.';
+                return marked(rawMarkdown);
+            }
+            throw error;
+        }
     }
 
     /**
@@ -369,38 +381,58 @@ class AIService {
         }
     }
     
-    async generateCoverLetter(jdText) {
-        const prompt = `Bạn là một chuyên gia viết cover letter. Dựa vào mô tả công việc (JD) sau đây, hãy tạo một cover letter chuyên nghiệp:
+    async generateCoverLetter(jdText, userInfo = {}) {
+        const { 
+            fullName = '', 
+            phone = '', 
+            email = '', 
+            recipientName = 'Hiring Manager', 
+            companyName = '',
+            position = '',
+            date = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+        } = userInfo;
     
-        JD:
+        const prompt = `Create a professional cover letter with exact formatting as follows:
+    
+        ${fullName}
+        ${phone}
+        ${email}
+    
+        ${date}
+    
+        Dear ${recipientName},
+    
+        [First Paragraph: Express strong interest in the specific position at ${companyName}. Mention how your background aligns with the role.]
+    
+        [Second Paragraph: Highlight your most relevant achievements and experiences that match the job requirements. Use specific numbers and awards if applicable. Reference the following job description:
         ${jdText}
+        ]
     
-        Yêu cầu:
-        1. Tạo một cover letter có cấu trúc rõ ràng
-        2. Nhấn mạnh các kỹ năng và yêu cầu được đề cập trong JD
-        3. Thể hiện sự hiểu biết về công việc và công ty
-        4. Giọng điệu chuyên nghiệp nhưng chân thành
-        5. Độ dài vừa phải (khoảng 300-400 từ)
+        [Final Paragraph: Thank them for their consideration, express enthusiasm about the opportunity, and include a call to action.]
     
-        Format bằng markdown với các phần:
-        - Lời chào
-        - Đoạn mở đầu
-        - Nội dung chính (2-3 đoạn)
-        - Đoạn kết
-        - Lời kết`;
+        Sincerely,
+        ${fullName}`;
     
         try {
             const result = await this.model.generateContent(prompt);
-            const coverLetter = result?.response?.candidates?.[0]?.content?.parts?.[0]?.text || 'Không thể tạo cover letter.';
+            const coverLetter = result?.response?.candidates?.[0]?.content?.parts?.[0]?.text || 'Could not generate cover letter.';
+            
+            // Format the letter with proper styling and spacing
+            const formattedLetter = `
+                <div style="white-space: pre-line; font-family: Arial, sans-serif; line-height: 1.6; margin: 2em;">
+                    ${coverLetter}
+                </div>
+            `;
+            
             return {
                 success: true,
-                coverLetter: marked(coverLetter)
+                coverLetter: formattedLetter
             };
         } catch (error) {
             console.error('Error generating cover letter:', error);
             return {
                 success: false,
-                error: 'Không thể tạo cover letter'
+                error: 'Failed to generate cover letter'
             };
         }
     }
