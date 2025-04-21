@@ -28,8 +28,7 @@ router.post('/jd/generate-answer', JDController.generateAnswer);
 router.post('/jd/translate-text', JDController.translateText);
 router.post('/jd/translate-guidance', JDController.translateGuidance);
 router.post('/jd/text-to-speech', JDController.textToSpeech);
-
-// Add this new route
 router.post('/jd/answer-specific', JDController.answerSpecificQuestion);
+router.post('/jd/generate-cover-letter', JDController.generateCoverLetter);
 
 module.exports = router;

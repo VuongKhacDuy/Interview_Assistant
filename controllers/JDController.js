@@ -49,7 +49,6 @@ exports.renderJDView = async (req, res) => {
     }
 };
 
-// Add this new function to handle API key submission
 exports.setApiKey = async (req, res) => {
     try {
         const { apiKey } = req.body;
@@ -289,5 +288,31 @@ exports.textToSpeech = async (req, res) => {
     } catch (error) {
         console.error('TTS Error:', error);
         res.status(500).json({ error: 'Failed to convert text to speech.' });
+    }
+};
+
+exports.generateCoverLetter = async (req, res) => {
+    try {
+        const apiKey = checkApiKey(req, res);
+        if (!apiKey) return;
+
+        const { jdText } = req.body;
+        if (!jdText) {
+            return res.status(400).json({
+                success: false,
+                error: 'JD text is required'
+            });
+        }
+
+        const aiService = new AIService(apiKey);
+        const result = await aiService.generateCoverLetter(jdText);
+
+        res.json(result);
+    } catch (error) {
+        console.error('Error generating cover letter:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Failed to generate cover letter'
+        });
     }
 };

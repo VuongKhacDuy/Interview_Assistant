@@ -369,6 +369,42 @@ class AIService {
         }
     }
     
+    async generateCoverLetter(jdText) {
+        const prompt = `Bạn là một chuyên gia viết cover letter. Dựa vào mô tả công việc (JD) sau đây, hãy tạo một cover letter chuyên nghiệp:
+    
+        JD:
+        ${jdText}
+    
+        Yêu cầu:
+        1. Tạo một cover letter có cấu trúc rõ ràng
+        2. Nhấn mạnh các kỹ năng và yêu cầu được đề cập trong JD
+        3. Thể hiện sự hiểu biết về công việc và công ty
+        4. Giọng điệu chuyên nghiệp nhưng chân thành
+        5. Độ dài vừa phải (khoảng 300-400 từ)
+    
+        Format bằng markdown với các phần:
+        - Lời chào
+        - Đoạn mở đầu
+        - Nội dung chính (2-3 đoạn)
+        - Đoạn kết
+        - Lời kết`;
+    
+        try {
+            const result = await this.model.generateContent(prompt);
+            const coverLetter = result?.response?.candidates?.[0]?.content?.parts?.[0]?.text || 'Không thể tạo cover letter.';
+            return {
+                success: true,
+                coverLetter: marked(coverLetter)
+            };
+        } catch (error) {
+            console.error('Error generating cover letter:', error);
+            return {
+                success: false,
+                error: 'Không thể tạo cover letter'
+            };
+        }
+    }
+
     async translateText(text, targetLanguage, contentType = 'text') {
         const prompt = `Translate the following ${contentType} to ${targetLanguage}. Maintain all formatting, including markdown, bullet points, and numbered lists:
     

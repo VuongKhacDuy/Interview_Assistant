@@ -1,0 +1,23 @@
+<div id="coverLetterSection" class="mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>Cover Letter</h3>
+        <div class="d-flex gap-2">
+            <select id="translateCoverLetterLanguage" class="form-select">
+                <option value="vi">Tiếng Việt</option>
+                <option value="en">English</option>
+                <option value="zh">中文</option>
+            </select>
+            <button id="generateCoverLetter" class="btn btn-primary">
+                <i class="bi bi-file-text"></i> Generate Cover Letter
+            </button>
+            <button id="translateCoverLetter" class="btn btn-outline-primary" style="display: none;">
+                <i class="bi bi-translate"></i> Translate
+            </button>
+        </div>
+    </div>
+    <div id="coverLetterResult" class="card" style="display: none;">
+        <div class="card-body">
+            <div class="cover-letter-content"></div>
+        </div>
+    </div>
+</div>
