@@ -19,7 +19,7 @@ dev:
 
 # Run in production mode
 .PHONY: start
-start:
+run:
 	$(NPM) start
 
 # Build for both Mac and Windows
