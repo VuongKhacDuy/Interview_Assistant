@@ -1,14 +1,14 @@
 <div class="container mt-4">
     <input type="hidden" id="hiddenJDText" name="hiddenJDText">
-    <h2 class="mb-4">Nhập JD hoặc Upload File PDF</h2>
+    <h2 class="mb-4">Enter JD or Upload PDF File</h2>
     <form id="jdForm" method="post" enctype="multipart/form-data" action="/jd/generate-question">
         <div class="mb-3">
-            <textarea name="jdText" id="jdText" class="form-control" placeholder="Nhập JD ở đây..." rows="10"></textarea>
+            <textarea name="jdText" id="jdText" class="form-control" placeholder="Enter JD here..." rows="10"></textarea>
         </div>
         <div class="mb-3">
             <label for="pdfFile" class="form-label">Upload File PDF</label>
             <input type="file" name="pdfFile" id="pdfFile" accept="application/pdf" class="form-control">
-            <button type="button" id="removePdf" class="btn btn-danger btn-sm mt-2" style="display: none;">Xóa file PDF</button>
+            <button type="button" id="removePdf" class="btn btn-danger btn-sm mt-2" style="display: none;">Delete file PDF</button>
         </div>
 
         <!-- Translation Section -->
@@ -20,7 +20,7 @@
                     <option value="zh">中文</option>
                 </select>
                 <button type="button" id="translateJD" class="btn btn-outline-primary">
-                    <i class="bi bi-translate"></i> Dịch JD
+                    <i class="bi bi-translate"></i> JD Translation
                 </button>
                 <span id="translateSpinner" class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
             </div>
@@ -30,9 +30,9 @@
         <div id="translatedSection" class="mb-3" style="display: none;">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Bản dịch</h5>
+                    <h5 class="mb-0">Translation</h5>
                     <button type="button" class="btn btn-outline-secondary btn-sm" id="copyTranslation">
-                        <i class="bi bi-clipboard"></i> Sao chép
+                        <i class="bi bi-clipboard"></i> Copy
                     </button>
                 </div>
                 <div class="card-body">
@@ -43,7 +43,7 @@
 
         <!-- Interview Language Section -->
         <div class="mb-3">
-            <label for="interviewLanguage" class="form-label">Chọn ngôn ngữ phỏng vấn:</label>
+            <label for="interviewLanguage" class="form-label">Select interview language:</label>
             <select id="interviewLanguage" name="interviewLanguage" class="form-select">
                 <option value="vi" selected>Tiếng Việt</option>
                 <option value="en">English</option>
