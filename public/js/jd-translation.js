@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const currentText = jdTextarea.value;
         
         if (!currentText.trim()) {
-            alert('Vui lòng nhập JD hoặc tải lên file PDF trước');
+            alert('Please input JD or upload PDF file first.');
             return;
         }
 
@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         } catch (error) {
             console.error('Translation error:', error);
-            alert('Không thể dịch. Vui lòng thử lại.');
+            alert('Unable to translate. Please try again.');
         } finally {
             spinner.style.display = 'none';
             translateBtn.disabled = false;
