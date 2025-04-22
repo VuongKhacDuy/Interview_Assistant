@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const jdText = document.getElementById('jdText').value;
         if (!jdText) {
-            alert('Vui lòng nhập JD trước');
+            alert('Please enter JD first');
             return;
         }
 
@@ -60,5 +60,19 @@ document.addEventListener('DOMContentLoaded', function() {
             generateBtn.disabled = false;
             generateBtn.innerHTML = '<i class="bi bi-file-text"></i> Generate Cover Letter';
         }
+    });
+
+    // Handling button Export DOC
+    document.getElementById('exportDOC')?.addEventListener('click', function() {
+        const content = document.querySelector('.cover-letter-content').innerHTML;
+        const blob = new Blob([content], { type: 'application/msword' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'cover-letter.doc';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
     });
 });
