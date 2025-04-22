@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const currentText = jdTextarea.value;
         
         if (!currentText.trim()) {
-            alert('Please input JD or upload PDF file first.');
+            alert('Please enter JD or upload PDF file first!');
             return;
         }
 
@@ -62,9 +62,9 @@ document.addEventListener('DOMContentLoaded', function() {
     copyBtn?.addEventListener('click', function() {
         translatedTextarea.select();
         document.execCommand('copy');
-        copyBtn.innerHTML = '<i class="bi bi-check2"></i> Đã sao chép';
+        copyBtn.innerHTML = '<i class="bi bi-check2"></i> Copied';
         setTimeout(() => {
-            copyBtn.innerHTML = '<i class="bi bi-clipboard"></i> Sao chép';
+            copyBtn.innerHTML = '<i class="bi bi-clipboard"></i> Copy';
         }, 2000);
     });
 });

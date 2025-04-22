@@ -386,9 +386,7 @@ class AIService {
             fullName = '', 
             phone = '', 
             email = '', 
-            recipientName = 'Hiring Manager', 
-            companyName = '',
-            position = '',
+            recipientName = 'Hiring Manager',
             date = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
         } = userInfo;
     
@@ -402,7 +400,7 @@ class AIService {
     
         Dear ${recipientName},
     
-        [First Paragraph: Express strong interest in the specific position at ${companyName}. Mention how your background aligns with the role.]
+        [First Paragraph: Express strong interest in the position based on the job description. Mention how your background aligns with the role.]
     
         [Second Paragraph: Highlight your most relevant achievements and experiences that match the job requirements. Use specific numbers and awards if applicable. Reference the following job description:
         ${jdText}

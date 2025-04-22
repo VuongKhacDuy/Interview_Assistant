@@ -5,12 +5,24 @@ document.addEventListener('DOMContentLoaded', function() {
     const contentDiv = document.querySelector('.cover-letter-content');
 
     generateBtn?.addEventListener('click', async function() {
+        const form = document.getElementById('coverLetterInfoForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
         const jdText = document.getElementById('jdText').value;
-        
         if (!jdText) {
             alert('Vui lòng nhập JD trước');
             return;
         }
+
+        const userInfo = {
+            fullName: document.getElementById('fullName').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            phone: document.getElementById('phone').value.trim(),
+            recipientName: document.getElementById('recipientName').value.trim() || 'Hiring Manager'
+        };
 
         generateBtn.disabled = true;
         generateBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Generating...';
@@ -21,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ jdText })
+                body: JSON.stringify({ jdText, userInfo })
             });
 
             if (!response.ok) {
@@ -43,7 +55,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         } catch (error) {
             console.error('Error:', error);
-            alert('Không thể tạo cover letter. Vui lòng thử lại.');
+            alert('Cover letter could not be created. Please try again.');
         } finally {
             generateBtn.disabled = false;
             generateBtn.innerHTML = '<i class="bi bi-file-text"></i> Generate Cover Letter';
