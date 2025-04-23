@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        .job-card {
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+        .job-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .job-location {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        .job-company {
+            color: #495057;
+            font-weight: 500;
+        }
+        .job-salary {
+            color: #28a745;
+            font-weight: 500;
+        }
+        .search-filters {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <%- include('partials/header', { title: title }) %>
+    
+    <div class="container mt-4">
+        <%- include('partials/api-key-form', { showApiKeyForm: showApiKeyForm, message: message }) %>
+        
+        <div class="more-jobs-container">
+            <div class="search-filters">
+                <form id="jobSearchForm" class="row g-3">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" id="keywords" placeholder="Job title, keywords...">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" class="form-control" id="location" placeholder="Location">
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" id="country">
+                            <option value="vn">Vietnam</option>
+                            <option value="gb">United Kingdom</option>
+                            <option value="us">United States</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" id="sortBy">
+                            <option value="date">Date</option>
+                            <option value="salary">Salary</option>
+                            <option value="relevance">Relevance</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="jobResults" class="row g-4">
+                <!-- Job cards will be dynamically inserted here -->
+            </div>
+
+            <div class="d-flex justify-content-center mt-4">
+                <button id="loadMore" class="btn btn-outline-primary" style="display: none;">
+                    Load More Jobs
+                </button>
+                <div id="loading" class="spinner-border text-primary" role="status" style="display: none;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/job-search.js"></script>
+</body>
+</html>

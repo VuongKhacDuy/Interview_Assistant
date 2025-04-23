@@ -21,7 +21,8 @@ function loadConfig() {
 }
 
 loadConfig();
-const jdRoutes = require('./routes/jdRoutes'); // Ensure correct casing
+const jdRoutes = require('./routes/jdRoutes');
+const jobRoutes = require('./routes/jobRoutes');
 
 const app = express();
 let PORT = process.env.PORT || 3000;
@@ -60,6 +61,7 @@ async function startServer() {
     app.use(express.urlencoded({ extended: false }));
     app.use(express.static('public'));
     app.use('/', jdRoutes);
+    app.use('/', jobRoutes);  // Add this line to mount the job routes
 
     // Find available port
     PORT = await findAvailablePort(PORT);
