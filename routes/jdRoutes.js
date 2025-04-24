@@ -16,19 +16,17 @@ router.post('/jd/generate-question', upload.single('pdfFile'), JDController.gene
 // Route evaluates the answer
 router.post('/jd/evaluate-answer', upload.none(), JDController.evaluateAnswer);
 
-// Route for generating guidance
+// Add this new route for generating guidance
 router.post('/jd/generate-guidance', JDController.generateGuidance);
 
 // Add this new route for translating guidance
 router.post('/jd/translate-guidance', JDController.translateGuidance);
 
 // Add these new routes
-// Routes the request to JDController
 router.post('/jd/generate-answer', JDController.generateAnswer);
 router.post('/jd/translate-text', JDController.translateText);
-router.post('/jd/translate-guidance', JDController.translateGuidance);
-router.post('/jd/text-to-speech', JDController.textToSpeech);
-router.post('/jd/answer-specific', JDController.answerSpecificQuestion);
-router.post('/jd/generate-cover-letter', JDController.generateCoverLetter);
+
+// Add this new route
+router.post('/jd/answer-specific-question', JDController.answerSpecificQuestion);
 
 module.exports = router;
