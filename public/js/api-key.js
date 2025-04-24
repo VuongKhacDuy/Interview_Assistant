@@ -12,20 +12,21 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             try {
-                const response = await fetch('/api/set-key', {
+                // Thay đổi endpoint từ /api/set-key thành /api/key/set
+                const response = await fetch('/api/key/set', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'  // Thêm header này
+                        'Accept': 'application/json'
                     },
-                    credentials: 'same-origin',  // Thêm option này để gửi cookies
+                    credentials: 'same-origin',
                     body: JSON.stringify({ apiKey })
                 });
 
                 // Kiểm tra response type
                 const contentType = response.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) {
-                    throw new Error('Server không trả về JSON response');
+                    throw new Error('Server không trả về JSON response. Vui lòng kiểm tra lại cấu hình server.');
                 }
 
                 const data = await response.json();
@@ -41,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } catch (error) {
                 console.error('Lỗi khi lưu API key:', error);
-                alert(error.message);
+                alert(`Lỗi: ${error.message}`);
             }
         });
     }
