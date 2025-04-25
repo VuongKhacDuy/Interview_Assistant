@@ -22,29 +22,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const parsedQuestions = JSON.parse(questionsData);
             
-            const response = await fetch('/jd/generate-guidance', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    jdText: jdText,
-                    questions: parsedQuestions.questions
-                })
+            // Make requests for each question
+            const guidancePromises = parsedQuestions.questions.map(async (question) => {
+                const response = await fetch('/jd/generate-guidance', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        jdText: jdText,
+                        question: question
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return {
+                    id: question.id,
+                    question: question.text,
+                    guidance: data.guidance
+                };
             });
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
+            const guidanceResults = await Promise.all(guidancePromises);
             
-            if (data.error) {
-                throw new Error(data.error);
-            }
-
             // Create accordion items for each question's guidance
-            const accordionHtml = data.guidance.map((item, index) => `
+            const accordionHtml = guidanceResults.map((item) => `
                 <div class="accordion-item">
                     <h2 class="accordion-header">
                         <button class="accordion-button collapsed" type="button" 
