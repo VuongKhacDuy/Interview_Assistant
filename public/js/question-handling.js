@@ -31,29 +31,30 @@ document.getElementById('jdForm')?.addEventListener('submit', async function(e) 
             throw new Error(data.error);
         }
         
-        // Save JD text and questions to hidden fields
+        // Save JD text to hidden field
         document.getElementById('hiddenJDText').value = data.jdText;
-        // When storing questions
-        hiddenQuestions.value = JSON.stringify(data.questions);
         
-        // Format and display questions
-        const questionsHtml = data.questions.questions.map((q, index) => `
-            <div class="card mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">Question ${index + 1}</h5>
-                    <p class="card-text">${q.question}</p>
-                </div>
-            </div>
-        `).join('');
+        // Lưu questions JSON vào hidden field
+        if (data.question && data.question.json) {
+            document.getElementById('hiddenQuestions').value = JSON.stringify(data.question.json);
+        }
         
-        document.getElementById('generatedQuestion').innerHTML = questionsHtml;
-        document.getElementById('questionSection').style.display = 'block';
+        // Hiển thị câu hỏi sử dụng HTML đã được format
+        if (data.question && data.question.html) {
+            document.getElementById('generatedQuestion').innerHTML = data.question.html;
+            document.getElementById('questionSection').style.display = 'block';
+            document.getElementById('questionSection').scrollIntoView({ behavior: 'smooth' });
+        } else {
+            throw new Error('Invalid question format received');
+        }
         
     } catch (error) {
         console.error('Error:', error);
         // Only show alert for timeout
         if (error.message === 'Request timeout') {
             alert('Không thể lấy được câu hỏi. Vui lòng thử lại.');
+        } else {
+            alert('Có lỗi xảy ra: ' + error.message);
         }
     } finally {
         submitBtn.disabled = false;
@@ -102,7 +103,7 @@ document.getElementById('getSpecificAnswer')?.addEventListener('click', async fu
         }
 
         const data = await response.json();
-        
+
         // Reset translation state for new answer
         isTranslated = false;
         translateBtn.innerHTML = '<i class="bi bi-translate"></i> Translate';
@@ -173,7 +174,7 @@ document.getElementById('translateSpecificAnswer')?.addEventListener('click', as
         }
         
         const data = await response.json();
-        
+
         if (!answerResult.getAttribute('data-original')) {
             answerResult.setAttribute('data-original', originalContent);
         }
@@ -182,6 +183,19 @@ document.getElementById('translateSpecificAnswer')?.addEventListener('click', as
             throw new Error(data.error);
         }
         
+        // Sửa lại phần xử lý response
+        if (data.question && data.jdText) {
+            // Lưu JD text
+            document.getElementById('hiddenJDText').value = data.jdText;
+            
+            // Hiển thị câu hỏi
+            document.getElementById('generatedQuestion').innerHTML = data.question;
+            document.getElementById('questionSection').style.display = 'block';
+            document.getElementById('questionSection').scrollIntoView({ behavior: 'smooth' });
+        } else {
+            console.error('Invalid response format:', data);
+            throw new Error('Invalid response format from server');
+        }
         answerResult.innerHTML = data.translation;
         button.innerHTML = '<i class="bi bi-translate"></i> Show Original';
         button.classList.remove('btn-primary');
