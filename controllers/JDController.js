@@ -210,17 +210,20 @@ exports.answerSpecificQuestion = async (req, res) => {
         const apiKey = checkApiKey(req, res);
         if (!apiKey) return;
 
-        const { jdText, specificQuestion } = req.body;
-        if (!jdText || !specificQuestion) {
-            return res.status(400).json({ error: 'JD and specific question are required.' });
+        const { jdText, question } = req.body;
+        if (!jdText || !question) {
+            return res.status(400).json({ error: 'JD and question are required.' });
         }
 
-        // Initialize AI service and generate answer for the specific question
+        // Initialize AI service and generate specific answer
         const aiService = new AIService(apiKey);
-        const htmlContent = await aiService.answerSpecificQuestion(jdText, specificQuestion);
+        const result = await aiService.answerSpecificQuestion(jdText, question);
 
-        // Return the specific answer
-        res.json({ specificAnswer: htmlContent });
+        if (result.success) {
+            res.json(result);
+        } else {
+            res.status(500).json({ error: result.error });
+        }
     } catch (error) {
         console.error('Error generating specific answer:', error);
         res.status(500).json({ error: 'Failed to generate specific answer.' });

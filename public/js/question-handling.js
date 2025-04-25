@@ -87,14 +87,14 @@ document.getElementById('getSpecificAnswer')?.addEventListener('click', async fu
     spinner.style.display = 'inline-block';
 
     try {
-        const response = await fetch('/jd/answer-specific', {
+        const response = await fetch('/jd/answer-specific-question', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 jdText,
-                question: specificQuestion
+                question: specificQuestion  // Change this line
             })
         });
 
@@ -183,23 +183,16 @@ document.getElementById('translateSpecificAnswer')?.addEventListener('click', as
             throw new Error(data.error);
         }
         
-        // Sửa lại phần xử lý response
-        if (data.question && data.jdText) {
-            // Lưu JD text
-            document.getElementById('hiddenJDText').value = data.jdText;
-            
-            // Hiển thị câu hỏi
-            document.getElementById('generatedQuestion').innerHTML = data.question;
-            document.getElementById('questionSection').style.display = 'block';
-            document.getElementById('questionSection').scrollIntoView({ behavior: 'smooth' });
+        // Sửa lại phần xử lý response translation
+        if (data.translation) {
+            answerResult.innerHTML = data.translation;
+            button.innerHTML = '<i class="bi bi-translate"></i> Show Original';
+            button.classList.remove('btn-primary');
+            button.classList.add('btn-outline-primary');
         } else {
             console.error('Invalid response format:', data);
             throw new Error('Invalid response format from server');
         }
-        answerResult.innerHTML = data.translation;
-        button.innerHTML = '<i class="bi bi-translate"></i> Show Original';
-        button.classList.remove('btn-primary');
-        button.classList.add('btn-outline-primary');
         
     } catch (error) {
         console.error('Translation error:', error);
