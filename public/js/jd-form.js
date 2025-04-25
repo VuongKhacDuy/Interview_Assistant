@@ -2,57 +2,84 @@ document.addEventListener('DOMContentLoaded', function() {
     const jdForm = document.getElementById('jdForm');
     const submitBtn = document.getElementById('submitJD');
     const spinner = document.getElementById('jdSpinner');
+    const jdText = document.getElementById('jdText');
+    const pdfFile = document.getElementById('pdfFile');
 
-    let isSubmitting = false;
+    if (jdForm) {
+        jdForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
 
-    jdForm?.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        if (isSubmitting) return;
-        isSubmitting = true;
+            // Validation
+            if (!jdText.value && !pdfFile.files[0]) {
+                showError('Vui lòng nhập JD hoặc tải lên file PDF');
+                return;
+            }
 
-        try {
+            // Hiển thị loading
             submitBtn.disabled = true;
             spinner.style.display = 'inline-block';
+            
+            try {
+                const formData = new FormData(this);
+                console.log('Form data being sent:', Object.fromEntries(formData));
 
-            const formData = new FormData(this);
-            const response = await fetch('/jd/generate-question', {
-                method: 'POST',
-                body: formData
-            });
+                const response = await fetch('/jd/generate-question', {
+                    method: 'POST',
+                    body: formData
+                });
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                if (response.status === 429) {
-                    // Rate limit error
-                    alert(data.error || 'Vui lòng đợi giây lát trước khi thử lại.');
-                    return;
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Server response:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        body: errorText
+                    });
+                    throw new Error(`Server error (${response.status}): ${errorText}`);
                 }
-                throw new Error(data.error || 'Server error');
-            }
 
-            if (data.error) {
-                throw new Error(data.error);
-            }
+                const data = await response.json();
+                console.log('Server response data:', data);
 
-            // Handle successful response
-            if (data.questions && data.questionHtml) {
-                document.getElementById('hiddenJDText').value = data.jdText || '';
-                console.log('Stored JD Text:', data.jdText); // Add this debug line
-                document.getElementById('hiddenQuestions').value = JSON.stringify(data.questions);
-                document.getElementById('generatedQuestion').innerHTML = data.questionHtml;
-                document.getElementById('questionSection').style.display = 'block';
-                document.getElementById('questionSection').scrollIntoView({ behavior: 'smooth' });
-            }
+                if (data.error) {
+                    console.error('API error:', data.error);
+                    throw new Error(data.error);
+                }
 
-        } catch (error) {
-            console.error('Error:', error);
-            alert(error.message || 'Failed to generate questions. Please try again.');
-        } finally {
-            submitBtn.disabled = false;
-            spinner.style.display = 'none';
-            isSubmitting = false;
-        }
-    });
+                // Xử lý kết quả thành công
+                if (data.questions && data.questionHtml) {
+                    document.getElementById('hiddenJDText').value = data.jdText || '';
+                    console.log('Stored JD Text:', data.jdText); // Add this debug line
+                    document.getElementById('hiddenQuestions').value = JSON.stringify(data.questions);
+                    document.getElementById('generatedQuestion').innerHTML = data.questionHtml;
+                    document.getElementById('questionSection').style.display = 'block';
+                    document.getElementById('questionSection').scrollIntoView({ behavior: 'smooth' });
+                }
+
+            } catch (error) {
+                console.error('Full error details:', error);
+                showError('Không thể tạo câu hỏi: ' + (error.message || 'Unknown error'));
+            } finally {
+                // Ẩn loading
+                submitBtn.disabled = false;
+                spinner.style.display = 'none';
+            }
+        });
+    }
+
+    // Hàm hiển thị thông báo lỗi
+    function showError(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-danger alert-dismissible fade show mt-3';
+        errorDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+        jdForm.insertBefore(errorDiv, jdForm.firstChild);
+        
+        // Tự động ẩn sau 5 giây
+        setTimeout(() => {
+            errorDiv.remove();
+        }, 5000);
+    }
 });

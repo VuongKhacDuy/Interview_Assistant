@@ -10,6 +10,9 @@ const upload = multer({ storage: storage });
 // Route to display JD interface
 router.get('/', JDController.renderJDView);
 
+// Route to set API key
+router.post('/jd/set-api-key', JDController.setApiKey);
+
 // Route to create question: supports receiving PDF file (field name: pdfFile) and/or jdText
 router.post('/jd/generate-question', upload.single('pdfFile'), JDController.generateQuestion);
 
@@ -23,12 +26,8 @@ router.post('/jd/generate-guidance', JDController.generateGuidance);
 router.post('/jd/translate-guidance', JDController.translateGuidance);
 
 // Add these new routes
-// Routes the request to JDController
 router.post('/jd/generate-answer', JDController.generateAnswer);
 router.post('/jd/translate-text', JDController.translateText);
 router.post('/jd/translate-guidance', JDController.translateGuidance);
-router.post('/jd/text-to-speech', JDController.textToSpeech);
-router.post('/jd/answer-specific', JDController.answerSpecificQuestion);
-router.post('/jd/generate-cover-letter', JDController.generateCoverLetter);
 
 module.exports = router;

@@ -52,9 +52,14 @@
         </div>
         <div class="mb-3">
             <button type="submit" id="submitJD" class="btn btn-primary">
-                Ask me a question
+                <span class="button-text">Cho tôi câu hỏi</span>
+                <span id="jdSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;" role="status">
+                    <span class="visually-hidden">Đang xử lý...</span>
+                </span>
             </button>
-            <span id="jdSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;" role="status"></span>
         </div>
+
+        <!-- Thêm div để hiển thị thông báo lỗi -->
+        <div class="invalid-feedback" id="formError"></div>
     </form>
 </div>

@@ -1,47 +1,21 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { marked } = require('marked');
+const constants = require('../config/constants');
 
-/**
- * Service for interacting with Google Generative AI
- */
 class AIService {
-    /**
-     * Initialize the AI service with an API key
-     * @param {string} apiKey - Google Generative AI API key
-     */
     constructor(apiKey) {
         this.genAI = new GoogleGenerativeAI(apiKey);
-        this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+        this.model = this.genAI.getGenerativeModel({ 
+            model: constants.API.MODELS.GEMINI_2_FLASH
+        });
     }
 
     /**
-     * Generate content using the AI model
-     * @param {string} prompt - The prompt to send to the AI
-     * @returns {string} HTML content generated from markdown response
-     */
-    async generateContent(prompt) {
-        try {
-            const result = await this.model.generateContent(prompt);
-            const rawMarkdown = result?.response?.candidates?.[0]?.content?.parts?.map(part => part.text).join('') || 'No response from AI.';
-            return marked(rawMarkdown);
-        } catch (error) {
-            // Add retry logic for 503 errors
-            if (error.status === 503) {
-                // Wait for 2 seconds and try again
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                const result = await this.model.generateContent(prompt);
-                const rawMarkdown = result?.response?.candidates?.[0]?.content?.parts?.map(part => part.text).join('') || 'No response from AI.';
-                return marked(rawMarkdown);
-            }
-            throw error;
-        }
-    }
-
-    /**
-     * Generate interview questions based on a job description
+     * Generates interview questions based on job description
      * @param {string} jdText - Job description text
-     * @param {string} targetLanguage - Target language for the response
-     * @returns {Object} JSON object containing questions and HTML formatted content
+     * @param {string} targetLanguage - Target language for questions
+     * @returns {Promise<Object>} Generated questions and HTML formatted content
+     * @throws {Error} If generation fails
      */
     async generateQuestion(jdText, targetLanguage) {
         const prompt = `You are an assistant who creates interview questions based on the job description (JD) below.

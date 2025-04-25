@@ -1,71 +1,22 @@
-# Interview_Assistant
-Interview_Assistant là một ứng dụng web giúp tạo ra các câu hỏi phỏng vấn dựa trên mô tả công việc (JD). Ứng dụng sử dụng Google Generative AI để tạo câu hỏi và đánh giá câu trả lời của ứng viên. Công cụ này không chỉ dành cho lập trình mà còn phù hợp với mọi lĩnh vực khác nhau.
+# Interview Assistant
 
-## Nội dung
+Ứng dụng hỗ trợ phỏng vấn sử dụng AI để tạo câu hỏi và đánh giá câu trả lời dựa trên mô tả công việc (JD).
 
-* [Yêu Cầu](#yêu-cầu)
-* [Cài Đặt](#cài-đặt)
-* [Cấu Trúc Dự Án](#cấu-trúc-dự-án)
-* [Cấu Hình](#cấu-hình)
-* [Chạy Ứng Dụng](#chạy-ứng-dụng)
-* [Cách Sử Dụng](#cách-sử-dụng)
-* [Scripts](#scripts)
-* [Liên Hệ](#liên-hệ)
+## Tính năng chính
 
-## Yêu Cầu
+- Tạo câu hỏi phỏng vấn từ JD
+- Đánh giá câu trả lời
+- Hỗ trợ đa ngôn ngữ (Tiếng Việt, English, 中文)
+- Tải lên file PDF
+- Tạo hướng dẫn trả lời
+- Tạo thư xin việc
 
-* **Node.js và npm:** Cài đặt phiên bản mới nhất từ [nodejs.org](https://nodejs.org/).
-* **Google Generative AI API Key:** Bạn cần đăng ký và lấy API key từ Google.
-* **Các package sau (sẽ được cài đặt thông qua npm):**
-    * express
-    * ejs
-    * dotenv
-    * multer
-    * @google/generative-ai
-    * marked
-    * pdf-parse
-    * nodemon (dành cho phát triển)
+## Cài đặt
 
-## Cài Đặt
-
-1. **Clone Repository hoặc tải về mã nguồn:**
-
-    ```bash
-    git clone <repository-url>
-    cd jd-assistant
-    ```
-
-2. **Khởi tạo dự án và cài đặt các dependencies:**
-
-    Nếu bạn chưa có file `package.json`, hãy chạy:
-
-    ```bash
-    npm init -y
-    ```
-
-    Sau đó, cài đặt các package:
-
-    ```bash
-    npm install express ejs dotenv multer @google/generative-ai marked pdf-parse
-    npm install nodemon --save-dev
-    ```
-
-## Cấu Trúc Dự Án
-
-```
-jd-assistant/
-├── dist/                     // file run của mac và win
-├── controllers/
-│   └── JDController.js       // Xử lý logic tạo câu hỏi và đánh giá câu trả lời
-├── routes/
-│   └── jdRoutes.js           // Định nghĩa các route của ứng dụng
-├── views/
-│   └── jd.ejs                // Giao diện người dùng (form nhập JD, upload PDF, chọn ngôn ngữ, editor, …)
-├── public/                   // Thư mục chứa các file tĩnh (CSS, JS, hình ảnh, …)
-├── .env                      // File cấu hình biến môi trường (GEN_API_KEY, PORT, …)
-├── server.js                 // File khởi chạy server Express
-├── package.json              // Quản lý các package và scripts
-└── README.md                 // Hướng dẫn cài đặt và sử dụng ứng dụng
+1. Clone repository:
+```bash
+git clone https://github.com/yourusername/interview-assistant.git
+cd interview-assistant
 ```
 
 <!-- ## Cấu Hình

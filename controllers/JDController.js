@@ -1,23 +1,16 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const { marked } = require('marked');
-const pdfParse = require('pdf-parse');
-const { synthesizeSpeech } = require('../utils/ttsUtils');
-const AIService = require('../services/aiService');
-const RateLimiter = require('../utils/rateLimiter');
-const { getLanguageName } = require('../utils/languageUtils');
-const { extractTextFromPdf } = require('../utils/pdfUtils');
-
 // Get API key from .env environment variable (GEN_API_KEY)
 const GEN_API_KEY = process.env.GEN_API_KEY;
 if (!GEN_API_KEY) {
     console.error("GEN_API_KEY is not defined in .env file");
 }
 
-// Map to save user cooldown status (based on IP)
-const userCooldowns = new Map();
+const AIService = require('../services/aiService');
+const RateLimiter = require('../utils/rateLimiter');
+const { getLanguageName } = require('../utils/languageUtils');
+const { extractTextFromPdf } = require('../utils/pdfUtils');
 
 // Create a rate limiter instance
-const rateLimiter = new RateLimiter(5000); // 5 seconds cooldown
+const rateLimiter = new RateLimiter(12000); // 5 seconds cooldown
 
 /**
  * Render JD interface (JD input form or PDF upload)
@@ -25,18 +18,6 @@ const rateLimiter = new RateLimiter(5000); // 5 seconds cooldown
 exports.renderJDView = async (req, res) => {
     try {
         const apiKey = req.cookies?.apiKey;
-        // const cookieExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
-        const cookieExpiry = new Date(Date.now() + 10 * 1000); // 10 seconds from now
-        // If API key exists but is expired, clear it
-        if (apiKey && new Date() > new Date(req.cookies?.apiKeyExpiry)) {
-            res.clearCookie('apiKey');
-            res.clearCookie('apiKeyExpiry');
-            return res.render('jd', {
-                title: 'JD Assistant',
-                showApiKeyForm: true,
-                message: 'Your API key has expired. Please enter it again.'
-            });
-        }
 
         res.render('jd', {
             title: 'JD Assistant',
@@ -46,35 +27,6 @@ exports.renderJDView = async (req, res) => {
     } catch (error) {
         console.error('Error rendering JD view:', error);
         res.status(500).send('Internal Server Error.');
-    }
-};
-
-exports.setApiKey = async (req, res) => {
-    try {
-        const { apiKey } = req.body;
-        if (!apiKey) {
-            return res.status(400).json({ error: 'API key is required' });
-        }
-
-        // Set cookies with 24-hour expiration
-        // const cookieExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
-        // Set cookies with 10-second expiration
-        const cookieExpiry = new Date(Date.now() + 10 * 1000);
-        res.cookie('apiKey', apiKey, { 
-            expires: cookieExpiry,
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production'
-        });
-        res.cookie('apiKeyExpiry', cookieExpiry, { 
-            expires: cookieExpiry,
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production'
-        });
-
-        res.json({ success: true });
-    } catch (error) {
-        console.error('Error setting API key:', error);
-        res.status(500).json({ error: 'Failed to set API key' });
     }
 };
 
@@ -94,15 +46,12 @@ const checkApiKey = (req, res) => {
     return apiKey;
 };
 
-
 exports.generateQuestion = async (req, res) => {
     try {
         const apiKey = checkApiKey(req, res);
         if (!apiKey) return;
 
         let { jdText, interviewLanguage } = req.body;
-        
-        // Remove rate limit check and message
         
         // If user uploads PDF file, prioritize reading content from file
         if (req.file) {
@@ -118,19 +67,25 @@ exports.generateQuestion = async (req, res) => {
             interviewLanguage = 'vi';
         }
 
+        // Check rate limiting
+        const rateLimitCheck = await rateLimiter.checkRateLimit(req.ip);
+        if (rateLimitCheck.isLimited) {
+            return res.status(429).json({ 
+                error: `Please wait ${rateLimitCheck.remainingTime} seconds before sending a new request.` 
+            });
+        }
+
         const targetLanguage = getLanguageName(interviewLanguage);
         
+        // Initialize AI service and generate question
         const aiService = new AIService(apiKey);
-        const result = await aiService.generateQuestion(jdText, targetLanguage);
+        const htmlContent = await aiService.generateQuestion(jdText, targetLanguage);
 
-        res.json({ 
-            questions: result.json,
-            questionHtml: result.html,
-            jdText 
-        });
+        // Return the question along with the original JD content
+        res.json({ question: htmlContent, jdText });
     } catch (error) {
-        console.error('Error generating questions:', error);
-        res.status(500).json({ error: 'Failed to generate questions.' });
+        console.error('Error generating question:', error);
+        res.status(500).json({ error: 'Failed to generate question.' });
     }
 };
 
@@ -161,59 +116,64 @@ exports.generateGuidance = async (req, res) => {
         const apiKey = checkApiKey(req, res);
         if (!apiKey) return;
 
-        const { jdText, questions } = req.body;
-        if (!jdText || !questions) {
-            return res.status(400).json({ error: 'JD text and questions are required.' });
+        const { jdText, question } = req.body;
+        if (!jdText || !question) {
+            return res.status(400).json({ error: 'JD and question are required.' });
         }
 
+        // Initialize AI service and generate guidance
         const aiService = new AIService(apiKey);
-        const guidanceResults = await aiService.generateGuidance(jdText, questions);
+        const htmlContent = await aiService.generateGuidance(jdText, question);
 
-        // Return array of guidance for each question
-        res.json({ guidance: guidanceResults });
+        // Return the guidance
+        res.json({ guidance: htmlContent });
     } catch (error) {
         console.error('Error generating guidance:', error);
         res.status(500).json({ error: 'Failed to generate guidance.' });
     }
 };
 
-// Controller calls AIService
 exports.generateAnswer = async (req, res) => {
+    try {
+        const apiKey = checkApiKey(req, res);
+        if (!apiKey) return;
+
+        const { jdText, question, guidance } = req.body;
+        if (!jdText || !question) {
+            return res.status(400).json({ error: 'JD and question are required.' });
+        }
+
+        // Initialize AI service and generate sample answer
+        const aiService = new AIService(apiKey);
+        const htmlContent = await aiService.generateAnswer(jdText, question, guidance);
+
+        // Return the sample answer
+        res.json({ answer: htmlContent });
+    } catch (error) {
+        console.error('Error generating sample answer:', error);
+        res.status(500).json({ error: 'Failed to generate sample answer.' });
+    }
+};
+
+exports.translateText = async (req, res) => {
     try {
         const apiKey = req.cookies?.apiKey;
         if (!apiKey) {
             return res.status(400).json({ error: 'API key is required.' });
         }
 
-        const { jdText, questions } = req.body;
-        if (!jdText || !questions) {
-            return res.status(400).json({ error: 'JD text and questions are required.' });
-        }
-
-        const aiService = new AIService(apiKey);
-        const result = await aiService.generateAnswer(jdText, questions);
-        res.json(result); // Pass through the result directly
-    } catch (error) {
-        console.error('Error generating answer:', error);
-        res.status(500).json({ error: 'Failed to generate answers.' });
-    }
-};
-
-exports.translateText = async (req, res) => {
-    try {
-        const apiKey = checkApiKey(req, res);
-        if (!apiKey) return;
-
         const { text, targetLanguage, contentType } = req.body;
         if (!text || !targetLanguage) {
             return res.status(400).json({ error: 'Text and target language are required.' });
         }
-        
+
+        // Initialize AI service and translate text
         const aiService = new AIService(apiKey);
         const languageName = getLanguageName(targetLanguage);
-        const result = await aiService.translateText(text, languageName, contentType);
+        const htmlContent = await aiService.translateText(text, languageName, contentType);
 
-        res.json({ translation: result });
+        // Return the translated text
+        res.json({ translation: htmlContent, type: contentType || 'text' });
     } catch (error) {
         console.error('Error translating text:', error);
         res.status(500).json({ error: 'Failed to translate text.' });
@@ -250,70 +210,44 @@ exports.answerSpecificQuestion = async (req, res) => {
         const apiKey = checkApiKey(req, res);
         if (!apiKey) return;
 
-        const { jdText, question } = req.body;
-        if (!jdText || !question) {
-            return res.status(400).json({
-                success: false,
-                error: 'JD text and question are required'
-            });
+        const { jdText, specificQuestion } = req.body;
+        if (!jdText || !specificQuestion) {
+            return res.status(400).json({ error: 'JD and specific question are required.' });
         }
 
+        // Initialize AI service and generate answer for the specific question
         const aiService = new AIService(apiKey);
-        const result = await aiService.answerSpecificQuestion(jdText, question);
+        const htmlContent = await aiService.answerSpecificQuestion(jdText, specificQuestion);
 
-        res.json(result);
+        // Return the specific answer
+        res.json({ specificAnswer: htmlContent });
     } catch (error) {
         console.error('Error generating specific answer:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message || 'Failed to generate answer'
-        });
+        res.status(500).json({ error: 'Failed to generate specific answer.' });
     }
 };
 
-exports.textToSpeech = async (req, res) => {
+
+exports.setApiKey = async (req, res) => {
     try {
-        const apiKey = checkApiKey(req, res);
-        if (!apiKey) return;
-
-        const { text, language } = req.body;
-        if (!text) {
-            return res.status(400).json({ error: 'Text is required.' });
+        const { apiKey } = req.body;
+        if (!apiKey) {
+            return res.status(400).json({ error: 'API key is required.' });
         }
 
-        const audioContent = await synthesizeSpeech(text, language);
-        
-        res.set('Content-Type', 'audio/mpeg');
-        res.send(audioContent);
-    } catch (error) {
-        console.error('TTS Error:', error);
-        res.status(500).json({ error: 'Failed to convert text to speech.' });
-    }
-};
-
-exports.generateCoverLetter = async (req, res) => {
-    try {
-        const apiKey = checkApiKey(req, res);
-        if (!apiKey) return;
-
-        const { jdText, userInfo } = req.body;
-        
-        if (!jdText) {
-            return res.status(400).json({ error: 'JD text is required.' });
-        }
-
-        if (!userInfo) {
-            return res.status(400).json({ error: 'User information is required.' });
-        }
-
-        // Initialize AI service and generate cover letter
+        // Khởi tạo AI service để kiểm tra API key có hợp lệ không
         const aiService = new AIService(apiKey);
-        const result = await aiService.generateCoverLetter(jdText, userInfo);
+        
+        // Set cookie với API key
+        res.cookie('apiKey', apiKey, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict'
+        });
 
-        // Return the cover letter
-        res.json(result);
+        res.json({ success: true });
     } catch (error) {
-        console.error('Error generating cover letter:', error);
-        res.status(500).json({ error: 'Failed to generate cover letter.' });
+        console.error('Error setting API key:', error);
+        res.status(400).json({ error: 'Invalid API key.' });
     }
 };

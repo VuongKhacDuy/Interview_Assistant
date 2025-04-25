@@ -22,6 +22,9 @@ document.getElementById('jdForm')?.addEventListener('submit', async function(e) 
 
         // Race between fetch and timeout
         const response = await Promise.race([fetchPromise, timeout]);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
 
         if (data.error) {
@@ -186,7 +189,7 @@ document.getElementById('translateSpecificAnswer')?.addEventListener('click', as
         
     } catch (error) {
         console.error('Translation error:', error);
-        alert('Failed to translate. Please try again.');
+        alert('Không thể dịch: ' + error.message);
         button.innerHTML = '<i class="bi bi-translate"></i> Translate';
         button.classList.remove('btn-primary');
         button.classList.add('btn-outline-primary');

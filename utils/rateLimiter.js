@@ -1,34 +1,33 @@
-/**
- * Simple in-memory rate limiter
- */
 class RateLimiter {
-    constructor(cooldownPeriod = 5000) {
-        this.userCooldowns = new Map();
-        this.cooldownPeriod = cooldownPeriod;
+    constructor(cooldownMs = 5000) {
+        this.cooldownMs = cooldownMs;
+        this.requests = new Map();
     }
 
-    /**
-     * Check if a user is rate limited
-     * @param {string} userId - User identifier (e.g., IP address)
-     * @returns {Object} Result with isLimited and remainingTime properties
-     */
-    checkLimit(userId) {
+    async checkRateLimit(ip) {
         const now = Date.now();
-        const lastRequestTime = this.userCooldowns.get(userId);
-        
-        if (lastRequestTime && now - lastRequestTime < this.cooldownPeriod) {
-            const remainingTime = Math.ceil((this.cooldownPeriod - (now - lastRequestTime)) / 1000);
+        const lastRequest = this.requests.get(ip);
+
+        if (lastRequest && (now - lastRequest) < this.cooldownMs) {
+            const waitTime = Math.ceil((this.cooldownMs - (now - lastRequest)) / 1000);
             return {
-                isLimited: true,
-                remainingTime
+                success: false,
+                error: `Vui lòng đợi ${waitTime} giây trước khi gửi yêu cầu tiếp theo.`
             };
         }
-        
-        this.userCooldowns.set(userId, now);
-        return {
-            isLimited: false,
-            remainingTime: 0
-        };
+
+        this.requests.set(ip, now);
+        return { success: true };
+    }
+
+    // Clean up old entries periodically
+    cleanup() {
+        const now = Date.now();
+        for (const [ip, timestamp] of this.requests.entries()) {
+            if (now - timestamp > this.cooldownMs) {
+                this.requests.delete(ip);
+            }
+        }
     }
 }
 
