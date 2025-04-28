@@ -50,7 +50,7 @@ class AIService {
 
                 - If not, reply with a JSON object: {"isValid": false, "message": "The input is not a job description (JD)"}
 
-                - If valid, create 5-10 interview questions that are relevant to that field that match the number of years of experience and level in the JD. If the JD is about programming, include code, algorithm and solution questions at the level that matches the required number of years of experience in the JD.
+                - If valid, create at least 10 interview questions that are relevant to that field that match the number of years of experience and level in the JD. If the JD is about programming, include code, algorithm and solution questions at the level that matches the required number of years of experience in the JD.
 
                 Return your response as a JSON object with this structure:
                 {
@@ -451,6 +451,52 @@ class AIService {
             throw new Error('Failed to translate text');
         }
     }
+    
+
+async evaluateCV(cvContent, jdText) {
+    const prompt = `Hãy đánh giá mức độ phù hợp của CV này với JD. Trả về kết quả dưới dạng JSON với format:
+    {
+        "score": number từ 0-100,
+        "strengths": ["điểm mạnh 1", "điểm mạnh 2"],
+        "weaknesses": ["điểm yếu 1", "điểm yếu 2"],
+        "suggestions": ["gợi ý 1", "gợi ý 2"]
+    }
+
+    JD: ${jdText}
+    
+    CV Content: ${cvContent}`;
+
+    try {
+        const result = await this.model.generateContent(prompt);
+        const response = result?.response?.candidates?.[0]?.content?.parts?.map(part => part.text).join('') || '{}';
+        return JSON.parse(response);
+    } catch (error) {
+        console.error('Error evaluating CV:', error);
+        throw new Error('Failed to evaluate CV');
+    }
+}
+
+async generateOptimizedCV(cvContent, jdText) {
+    const prompt = `Dựa trên CV hiện tại và JD, hãy tạo một CV mới được tối ưu hóa phù hợp với vị trí. 
+    Trả về kết quả dưới dạng HTML với các sections: 
+    - Thông tin cá nhân
+    - Tóm tắt
+    - Kinh nghiệm làm việc
+    - Kỹ năng
+    - Học vấn
+    
+    JD: ${jdText}
+    
+    CV Content: ${cvContent}`;
+
+    try {
+        const result = await this.model.generateContent(prompt);
+        return result?.response?.candidates?.[0]?.content?.parts?.map(part => part.text).join('') || '';
+    } catch (error) {
+        console.error('Error generating optimized CV:', error);
+        throw new Error('Failed to generate optimized CV');
+    }
+}
 }
 
 module.exports = AIService;

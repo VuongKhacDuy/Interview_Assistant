@@ -138,6 +138,8 @@
   <!-- Add before your other scripts -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.8/purify.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+  <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';</script>
 </head>
 <body>
   <%- include('partials/header', { title: title }) %>
@@ -145,6 +147,58 @@
   <div class="container mt-4">
       <%- include('partials/api-key-form', { showApiKeyForm: showApiKeyForm, message: message }) %>
       <%- include('partials/jd-form') %>
+      
+      <!-- CV Upload Section -->
+      <div class="card mb-4">
+          <div class="card-body">
+              <h4>Upload CV</h4>
+              <form id="cvUploadForm" enctype="multipart/form-data">
+                  <div class="mb-3">
+                      <label for="cvFile" class="form-label">Upload your CV (PDF only)</label>
+                      <input type="file" class="form-control" id="cvFile" accept=".pdf" required>
+                  </div>
+                  <div class="mb-3">
+                      <button type="button" id="evaluateCV" class="btn btn-primary">
+                          <i class="bi bi-check-circle"></i> Evaluate CV
+                      </button>
+                      <button type="button" id="generateOptimizedCV" class="btn btn-success">
+                          <i class="bi bi-file-earmark-text"></i> Generate Optimized CV
+                      </button>
+                      <span id="cvSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
+                  </div>
+              </form>
+          </div>
+      </div>
+  
+      <!-- CV Evaluation Result Section -->
+      <div id="cvEvaluationSection" class="card mb-4" style="display: none;">
+          <div class="card-body">
+              <h4>CV Evaluation Result</h4>
+              <div class="row">
+                  <div class="col-md-4">
+                      <div class="score-circle">
+                          <h2 id="matchScore">0</h2>
+                          <p>Match Score</p>
+                      </div>
+                  </div>
+                  <div class="col-md-8">
+                      <div id="evaluationDetails"></div>
+                  </div>
+              </div>
+          </div>
+      </div>
+  
+      <!-- Optimized CV Section -->
+      <div id="optimizedCVSection" class="card mb-4" style="display: none;">
+          <div class="card-body">
+              <h4>Optimized CV Suggestions</h4>
+              <div id="optimizedCVContent"></div>
+              <button type="button" id="downloadOptimizedCV" class="btn btn-primary mt-3">
+                  <i class="bi bi-download"></i> Download Optimized CV
+              </button>
+          </div>
+      </div>
+
       <%- include('partials/question-section') %>
       <%- include('partials/answer-section') %>
       <%- include('partials/cover-letter-section') %>
@@ -155,3 +209,29 @@
   <script src="/js/sample-answer-handling.js"></script>
   </body>
   </html>
+
+  <style>
+    .score-circle {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        background: #f8f9fa;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        border: 8px solid #0d6efd;
+    }
+
+    .score-circle h2 {
+        font-size: 3rem;
+        margin: 0;
+        color: #0d6efd;
+    }
+
+    .score-circle p {
+        margin: 0;
+        color: #6c757d;
+    }
+  </style>
