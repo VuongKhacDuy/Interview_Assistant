@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!response.ok) {
                 if (response.status === 429) {
                     // Rate limit error
-                    alert(data.error || 'Vui lòng đợi giây lát trước khi thử lại.');
+                    alert(data.error || 'Waiting for rate limit to reset. Please try again later.');
                     return;
                 }
                 throw new Error(data.error || 'Server error');

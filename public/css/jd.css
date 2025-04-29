@@ -1,0 +1,144 @@
+/* Editor styles */
+.ace_gutter {
+    z-index: 0 !important;
+}
+
+/* Guidance styles */
+.guidance-container {
+    margin-top: 1rem;
+}
+
+.guidance-item {
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.guidance-item .card-header {
+    padding: 0;
+}
+
+.guidance-item .btn-link {
+    padding: 1rem;
+    color: #212529;
+}
+
+.guidance-item .btn-link:hover {
+    background-color: #f8f9fa;
+}
+
+.guidance-item .btn-link:focus {
+    box-shadow: none;
+}
+
+.guidance-item .card-body {
+    padding: 1.25rem;
+}
+
+.guidance-item .bi-chevron-down {
+    transition: transform 0.2s;
+}
+
+.guidance-item .collapsed .bi-chevron-down {
+    transform: rotate(-90deg);
+}
+
+.guidance-content {
+    color: #495057;
+    line-height: 1.6;
+}
+
+.guidance-content p {
+    margin-bottom: 1rem;
+}
+
+.guidance-content ul, 
+.guidance-content ol {
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+}
+
+.guidance-content code {
+    background-color: #e9ecef;
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.25rem;
+    font-family: monospace;
+}
+
+/* Accordion styles */
+.accordion-button:not(.collapsed) {
+    background-color: #e7f1ff;
+    color: #0c63e4;
+}
+
+.accordion-body {
+    background-color: #f8f9fa;
+}
+
+.accordion-button:focus {
+    box-shadow: none;
+    border-color: rgba(0,0,0,.125);
+}
+
+/* Editor styles */
+#editor {
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}
+
+.ace_editor {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* Evaluation result styles */
+.evaluation-result {
+    padding: 1rem;
+}
+
+.evaluation-result h4 {
+    color: #0d6efd;
+    margin-bottom: 1rem;
+}
+
+.evaluation-result ul {
+    padding-left: 1.5rem;
+}
+
+.evaluation-result .detailed-scores {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.25rem;
+    margin: 1rem 0;
+}
+
+.evaluation-result strong {
+    color: #495057;
+}
+
+/* Score circle styles */
+.score-circle {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: #f8f9fa;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    border: 8px solid #0d6efd;
+}
+
+.score-circle h2 {
+    font-size: 3rem;
+    margin: 0;
+    color: #0d6efd;
+}
+
+.score-circle p {
+    margin: 0;
+    color: #6c757d;
+}
