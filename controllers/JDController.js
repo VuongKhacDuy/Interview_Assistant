@@ -393,6 +393,8 @@ exports.convertCV = async (req, res) => {
                 error: 'HTML content and format are required' 
             });
         }
+
+        // Xử lý và làm sạch HTML
         const cleanHtml = html.replace(/^```html\s*/, '').replace(/```\s*$/, '');
 
         // Thêm style và wrapper cho nội dung HTML
@@ -411,13 +413,12 @@ exports.convertCV = async (req, res) => {
                         color: #333;
                         margin-top: 20px;
                         text-align: center;
+                        width: 100%;
                     }
-
                     h3, h4, h5 {
                         color: #333;
                         margin-top: 20px;
                     }
-
                     ul {
                         margin: 10px 0;
                         padding-left: 20px;
@@ -429,12 +430,8 @@ exports.convertCV = async (req, res) => {
                         margin: 10px 0;
                     }
                     @page {
-                        margin: 0;
-                    }
-                    @media print {
-                        body {
-                            margin: 40px;
-                        }
+                        size: A4;
+                        margin: 2cm;
                     }
                 </style>
             </head>
@@ -446,27 +443,28 @@ exports.convertCV = async (req, res) => {
             </html>
         `;
 
-        if (format === 'doc') {
-            // Convert to DOC với HTML đã được style
-            const doc = htmlDocx.asBlob(cleanHtml);
-            res.setHeader('Content-Type', 'application/msword');
-            res.setHeader('Content-Disposition', 'attachment; filename=optimized_cv.doc');
-            res.send(doc);
-            // const docBuffer = htmlDocx.asBlob(styledHtml, {
-            //     orientation: 'portrait',
-            //     margins: {
-            //         top: 1440,    // 1 inch = 1440 twips
-            //         right: 1440,
-            //         bottom: 1440,
-            //         left: 1440
-            //     }
-            // });
-            // res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-            // res.setHeader('Content-Disposition', 'attachment; filename=optimized_cv.docx');
-            // res.send(docBuffer);
+        if (format === 'docx') {
+            try {
+                const docBuffer = await htmlDocx.asBlob(styledHtml, {
+                    orientation: 'portrait',
+                    margins: {
+                        top: 1440, 
+                        right: 1440,
+                        bottom: 1440,
+                        left: 1440
+                    },
+                    title: 'Optimized CV'
+                });
+                
+                res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+                res.setHeader('Content-Disposition', 'attachment; filename=optimized_cv.docx');
+                res.send(docBuffer);
+            } catch (docxError) {
+                console.error('Error converting to DOCX:', docxError);
+                throw new Error('Failed to convert to DOCX format');
+            }
         } 
         else if (format === 'pdf') {
-            // Convert to PDF với HTML đã được style
             const options = { 
                 format: 'A4',
                 margin: {

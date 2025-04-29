@@ -214,7 +214,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({
                     html: content,
-                    format: 'doc'
+                    format: 'docx'
                 })
             });
 
@@ -226,7 +226,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'optimized_cv.doc';
+            a.download = 'optimized_cv.docx';
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
