@@ -493,22 +493,33 @@ async generateOptimizedCV(cvContent, jdText) {
     const prompt = `Based on the current CV and job description (JD), create an optimized CV for the position.
     Return the result in HTML format with the following sections:
     - Personal Information
-    - Summary
+    - Summary (Follow these guidelines for the summary:
+        * Start with a strong professional title based on years of experience
+        * Highlight specific expertise and technical proficiency from the CV
+        * Mention notable achievements and impact
+        * Include relevant certifications and specializations
+        * Show alignment with the target role's requirements
+        * Use formal, professional language
+        * Keep it concise but comprehensive (3-4 sentences)
+        * Emphasize unique value proposition
+        * Use industry-specific terminology from the CV
+        * Maintain a professional and scholarly tone throughout)
     - Work Experience
     - Skills
     - Education
 
+    Important: For the Summary section:
+    - Use formal academic language
+    - Be specific to the individual's actual experience from their CV
+    - Highlight concrete achievements and specializations
+    - Maintain professionalism and sophistication in tone
+    - Focus on unique qualifications and expertise
+    - Ensure it aligns with both the CV content and job requirements
+
     Current CV: ${cvContent}
-    JD: ${jdText}
+    Job Description: ${jdText}
 
-    Format the response in clean HTML with proper styling. Focus on:
-    1. Highlighting relevant experience and skills that match the JD
-    2. Using professional formatting
-    3. Maintaining clear section hierarchy
-    4. Including all important details from original CV
-    5. Optimizing content to match job requirements
-
-    Return only the HTML content.`;
+    Return only the HTML content with appropriate formatting and styling.`;
 
     try {
         const result = await this.model.generateContent(prompt);
