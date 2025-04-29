@@ -21,13 +21,13 @@ exports.solveProblem = async (req, res) => {
             return res.status(400).json({ error: 'API key is required.' });
         }
 
-        const { problem, language } = req.body;
+        const { problem, language, outputLanguage } = req.body;
         if (!problem) {
             return res.status(400).json({ error: 'Problem description is required.' });
         }
 
         const aiService = new AIService(apiKey);
-        const solution = await aiService.solveAlgorithm(problem, language);
+        const solution = await aiService.solveAlgorithm(problem, language, outputLanguage);
         res.json({ solution });
     } catch (error) {
         console.error('Error solving problem:', error);

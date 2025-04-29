@@ -531,8 +531,14 @@ async generateOptimizedCV(cvContent, jdText) {
     }
 }
 
-async solveAlgorithm(problem, language) {
-    const prompt = `As an expert programmer, analyze and solve this algorithm problem:
+async solveAlgorithm(problem, language, outputLanguage) {
+    const languageMap = {
+        'vi': 'Vietnamese',
+        'en': 'English'
+    };
+
+    const prompt = `As an expert programmer, analyze and solve this algorithm problem.
+Please provide the explanation in ${languageMap[outputLanguage] || 'Vietnamese'}.
 
 Problem: ${problem}
 
@@ -556,7 +562,8 @@ Please provide a comprehensive solution in ${language} with:
    - Other possible solutions
    - Trade-offs between approaches
 
-Format your response in markdown with clear sections and code blocks.`;
+Format your response in markdown with clear sections and code blocks.
+All explanations should be in ${languageMap[outputLanguage] || 'Vietnamese'}, but keep code and technical terms in English.`;
 
     try {
         const result = await this.model.generateContent(prompt);

@@ -5,6 +5,7 @@ document.getElementById('algorithmForm')?.addEventListener('submit', async funct
     const spinner = document.getElementById('solveSpinner');
     const problemInput = document.getElementById('problemInput').value;
     const programmingLanguage = document.getElementById('programmingLanguage').value;
+    const outputLanguage = document.getElementById('outputLanguage').value;
     
     if (!problemInput.trim()) {
         alert('Vui lòng nhập đề bài hoặc link');
@@ -22,7 +23,8 @@ document.getElementById('algorithmForm')?.addEventListener('submit', async funct
             },
             body: JSON.stringify({
                 problem: problemInput,
-                language: programmingLanguage
+                language: programmingLanguage,
+                outputLanguage: outputLanguage
             })
         });
         
