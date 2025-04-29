@@ -530,6 +530,43 @@ async generateOptimizedCV(cvContent, jdText) {
         throw new Error("Failed to generate optimized CV");
     }
 }
+
+async solveAlgorithm(problem, language) {
+    const prompt = `As an expert programmer, analyze and solve this algorithm problem:
+
+Problem: ${problem}
+
+Please provide a comprehensive solution in ${language} with:
+1. Problem Analysis
+   - Understanding of the problem
+   - Input/Output examples
+   - Edge cases to consider
+
+2. Solution Approach
+   - Algorithm explanation
+   - Time and Space complexity analysis
+   - Key considerations
+
+3. Implementation
+   - Well-commented code in ${language}
+   - Explanation of key steps
+   - Test cases
+
+4. Alternative Approaches (if applicable)
+   - Other possible solutions
+   - Trade-offs between approaches
+
+Format your response in markdown with clear sections and code blocks.`;
+
+    try {
+        const result = await this.model.generateContent(prompt);
+        const solution = result?.response?.candidates?.[0]?.content?.parts?.map(part => part.text).join('') || 'Could not generate solution.';
+        return marked(solution); // Convert markdown to HTML
+    } catch (error) {
+        console.error('Error solving algorithm:', error);
+        throw new Error('Failed to solve algorithm problem');
+    }
+}
 }
 
 module.exports = AIService;
