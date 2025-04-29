@@ -30,5 +30,6 @@ router.post('/jd/translate-guidance', JDController.translateGuidance);
 router.post('/jd/text-to-speech', JDController.textToSpeech);
 router.post('/jd/answer-specific', JDController.answerSpecificQuestion);
 router.post('/jd/generate-cover-letter', JDController.generateCoverLetter);
+router.post('/jd/evaluate-cv', JDController.evaluateCV);
 
 module.exports = router;

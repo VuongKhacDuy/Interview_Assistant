@@ -454,25 +454,38 @@ class AIService {
     
 
 async evaluateCV(cvContent, jdText) {
-    const prompt = `Hãy đánh giá mức độ phù hợp của CV này với JD. Trả về kết quả dưới dạng JSON với format:
-    {
-        "score": number từ 0-100,
-        "strengths": ["điểm mạnh 1", "điểm mạnh 2"],
-        "weaknesses": ["điểm yếu 1", "điểm yếu 2"],
-        "suggestions": ["gợi ý 1", "gợi ý 2"]
-    }
+    const prompt = `Bạn là một chuyên gia tuyển dụng có kinh nghiệm. Hãy đánh giá CV của ứng viên dựa trên yêu cầu công việc (JD).
+        
+        JD: ${jdText}
+        CV: ${cvContent}
 
-    JD: ${jdText}
-    
-    CV Content: ${cvContent}`;
+        Hãy đánh giá và cung cấp phản hồi theo các tiêu chí sau:
+        1. Mức độ phù hợp tổng thể (thang điểm 1-10)
+        2. Điểm mạnh của ứng viên
+        3. Các kỹ năng còn thiếu so với yêu cầu
+        4. Đề xuất cải thiện
+        5. Nhận xét chung
+
+        Trả về kết quả dưới dạng JSON với cấu trúc:
+        {
+            "overallScore": number,
+            "strengths": ["điểm mạnh 1", "điểm mạnh 2", ...],
+            "missingSkills": ["kỹ năng 1", "kỹ năng 2", ...],
+            "improvements": ["đề xuất 1", "đề xuất 2", ...],
+            "generalComment": "nhận xét chung"
+        }`;
 
     try {
         const result = await this.model.generateContent(prompt);
-        const response = result?.response?.candidates?.[0]?.content?.parts?.map(part => part.text).join('') || '{}';
-        return JSON.parse(response);
+        const responseText = result?.response?.candidates?.[0]?.content?.parts?.map(part => part.text).join('') || '{}';
+        
+        // Parse JSON response
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        const jsonString = jsonMatch ? jsonMatch[0] : responseText;
+        return JSON.parse(jsonString);
     } catch (error) {
-        console.error('Error evaluating CV:', error);
-        throw new Error('Failed to evaluate CV');
+        console.error("Error evaluating CV:", error);
+        throw new Error("Failed to evaluate CV");
     }
 }
 

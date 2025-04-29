@@ -2,10 +2,10 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { marked } = require('marked');
 const pdfParse = require('pdf-parse');
 const { synthesizeSpeech } = require('../utils/ttsUtils');
-const AIService = require('../services/aiService');
 const RateLimiter = require('../utils/rateLimiter');
 const { getLanguageName } = require('../utils/languageUtils');
 const { extractTextFromPdf } = require('../utils/pdfUtils');
+const AIService = require('../services/aiService');
 
 // Get API key from .env environment variable (GEN_API_KEY)
 const GEN_API_KEY = process.env.GEN_API_KEY;
@@ -315,5 +315,37 @@ exports.generateCoverLetter = async (req, res) => {
     } catch (error) {
         console.error('Error generating cover letter:', error);
         res.status(500).json({ error: 'Failed to generate cover letter.' });
+    }
+};
+
+exports.evaluateCV = async (req, res) => {
+    try {
+        const apiKey = req.cookies?.apiKey;
+        if (!apiKey) {
+            return res.status(401).json({ 
+                error: 'API key is required' 
+            });
+        }
+
+        const { cvContent, jdText } = req.body;
+        
+        if (!cvContent || !jdText) {
+            return res.status(400).json({ 
+                error: 'CV content and JD text are required' 
+            });
+        }
+
+        const aiService = new AIService(apiKey);
+        const evaluation = await aiService.evaluateCV(cvContent, jdText);
+        
+        res.json({ 
+            success: true, 
+            evaluation 
+        });
+    } catch (error) {
+        console.error('Error in CV evaluation:', error);
+        res.status(500).json({ 
+            error: 'Failed to evaluate CV' 
+        });
     }
 };

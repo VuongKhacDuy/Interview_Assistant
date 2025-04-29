@@ -1,14 +1,13 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize AI service if not already initialized
-    if (!window.aiService) {
-        window.aiService = new AIService();
-    }
-    const cvUploadForm = document.getElementById('cvUploadForm');
     const evaluateBtn = document.getElementById('evaluateCV');
     const generateBtn = document.getElementById('generateOptimizedCV');
     const cvSpinner = document.getElementById('cvSpinner');
     const evaluationSection = document.getElementById('cvEvaluationSection');
     const optimizedSection = document.getElementById('optimizedCVSection');
+    const matchScore = document.getElementById('matchScore');
+    const evaluationDetails = document.getElementById('evaluationDetails');
+    const optimizedCVContent = document.getElementById('optimizedCVContent');
+    const downloadOptimizedCV = document.getElementById('downloadOptimizedCV');
 
     // Hàm đọc nội dung file PDF
     async function readPdfContent(file) {
@@ -35,55 +34,101 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    evaluateBtn?.addEventListener('click', async function() {
-        const cvFile = document.getElementById('cvFile').files[0];
-        const jdText = document.getElementById('hiddenJDText').value;
+    let isProcessing = false;
 
+    document.getElementById('evaluateCV').addEventListener('click', async function() {
+        if (isProcessing) return;
+        isProcessing = true;
+        
+        const cvFile = document.getElementById('cvFile').files[0];
+        const jdText = document.getElementById('jdText').value;
+    
         if (!cvFile || !jdText) {
             alert('Vui lòng tải lên CV và nhập JD trước');
+            isProcessing = false;
             return;
         }
-
+    
         try {
             cvSpinner.style.display = 'inline-block';
             evaluateBtn.disabled = true;
-
+    
             const cvContent = await readPdfContent(cvFile);
-            const data = await window.aiService.evaluateCV(cvContent, jdText);
             
-            // Hiển thị kết quả đánh giá
-            document.getElementById('matchScore').textContent = data.score;
-            
-            let detailsHtml = '<div class="evaluation-details">';
-            detailsHtml += '<h5>Điểm mạnh:</h5><ul>';
-            data.strengths.forEach(strength => {
-                detailsHtml += `<li>${strength}</li>`;
-            });
-            detailsHtml += '</ul><h5>Điểm yếu:</h5><ul>';
-            data.weaknesses.forEach(weakness => {
-                detailsHtml += `<li>${weakness}</li>`;
-            });
-            detailsHtml += '</ul><h5>Gợi ý cải thiện:</h5><ul>';
-            data.suggestions.forEach(suggestion => {
-                detailsHtml += `<li>${suggestion}</li>`;
-            });
-            detailsHtml += '</ul></div>';
-            
-            document.getElementById('evaluationDetails').innerHTML = detailsHtml;
-            evaluationSection.style.display = 'block';
+            if (!cvContent || cvContent.trim().length === 0) {
+                throw new Error('Could not extract text from PDF file. Please ensure the PDF is text-based and not scanned.');
+            }
 
+            // Gửi request đến server thay vì xử lý trực tiếp
+            const response = await fetch('/jd/evaluate-cv', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    cvContent,
+                    jdText
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to evaluate CV');
+            }
+
+            const result = await response.json();
+            
+            if (!result || !result.evaluation) {
+                throw new Error('Invalid response format from evaluation service');
+            }
+
+            // Hiển thị kết quả đánh giá
+            matchScore.textContent = result.evaluation.overallScore * 10;
+            
+            let detailsHtml = `
+                <h5>Điểm mạnh:</h5>
+                <ul>
+                    ${result.evaluation.strengths.map(s => `<li>${s}</li>`).join('')}
+                </ul>
+                <h5>Kỹ năng còn thiếu:</h5>
+                <ul>
+                    ${result.evaluation.missingSkills.map(w => `<li>${w}</li>`).join('')}
+                </ul>
+                <h5>Đề xuất cải thiện:</h5>
+                <ul>
+                    ${result.evaluation.improvements.map(s => `<li>${s}</li>`).join('')}
+                </ul>
+                <h5>Nhận xét chung:</h5>
+                <p>${result.evaluation.generalComment}</p>
+            `;
+            
+            evaluationDetails.innerHTML = detailsHtml;
+            evaluationSection.style.display = 'block';
+    
         } catch (error) {
             console.error('Error:', error);
-            alert('Không thể đánh giá CV. Vui lòng thử lại.');
+            let errorMessage = 'An error occurred while evaluating the CV. ';
+            
+            if (error.message.includes('PDF')) {
+                errorMessage += 'Please ensure your PDF is text-based and not scanned.';
+            } else if (error.message.includes('API')) {
+                errorMessage += 'Please check your API key and try again.';
+            } else if (error.message.includes('format')) {
+                errorMessage += 'Received invalid response from the evaluation service.';
+            } else {
+                errorMessage += 'Please try again later.';
+            }
+            
+            alert(errorMessage);
         } finally {
             cvSpinner.style.display = 'none';
             evaluateBtn.disabled = false;
+            isProcessing = false; // Reset flag khi hoàn thành
         }
     });
 
     generateBtn?.addEventListener('click', async function() {
         const cvFile = document.getElementById('cvFile').files[0];
-        const jdText = document.getElementById('hiddenJDText').value;
+        const jdText = document.getElementById('jdText').value;
 
         if (!cvFile || !jdText) {
             alert('Vui lòng tải lên CV và nhập JD trước');
@@ -95,9 +140,25 @@ document.addEventListener('DOMContentLoaded', function() {
             generateBtn.disabled = true;
 
             const cvContent = await readPdfContent(cvFile);
-            const response = await window.aiService.generateOptimizedCV(cvContent, jdText);
             
-            document.getElementById('optimizedCVContent').innerHTML = response;
+            // Make a fetch request to the server instead of using AIService directly
+            const response = await fetch('/jd/generate-optimized-cv', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    cvContent,
+                    jdText
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to generate optimized CV');
+            }
+
+            const result = await response.json();
+            optimizedCVContent.innerHTML = result.optimizedCV;
             optimizedSection.style.display = 'block';
 
         } catch (error) {
@@ -106,6 +167,21 @@ document.addEventListener('DOMContentLoaded', function() {
         } finally {
             cvSpinner.style.display = 'none';
             generateBtn.disabled = false;
+            isProcessing = false;
         }
+    });
+
+    // Xử lý sự kiện tải CV tối ưu
+    downloadOptimizedCV?.addEventListener('click', function() {
+        const content = optimizedCVContent.innerHTML;
+        const blob = new Blob([content], { type: 'text/html' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'optimized_cv.html';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
     });
 });

@@ -1,0 +1,21 @@
+<!-- CV Upload Section -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h4>Upload CV</h4>
+        <form id="cvUploadForm" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label for="cvFile" class="form-label">Upload your CV (PDF only)</label>
+                <input type="file" class="form-control" id="cvFile" accept=".pdf" required>
+            </div>
+            <div class="mb-3">
+                <button type="button" id="evaluateCV" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i> Evaluate CV
+                </button>
+                <button type="button" id="generateOptimizedCV" class="btn btn-success">
+                    <i class="bi bi-file-earmark-text"></i> Generate Optimized CV
+                </button>
+                <span id="cvSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
+            </div>
+        </form>
+    </div>
+</div>

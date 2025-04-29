@@ -4,138 +4,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <title><%= title %></title>
 
-  <style>
-    .ace_gutter {
-        z-index: 0 !important;
-    }
-
-    /* Guidance styles */
-    .guidance-container {
-        margin-top: 1rem;
-    }
-
-    .guidance-item {
-        background-color: #f8f9fa;
-        border-radius: 0.5rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .guidance-item .card-header {
-        padding: 0;
-    }
-    
-    .guidance-item .btn-link {
-        padding: 1rem;
-        color: #212529;
-    }
-    
-    .guidance-item .btn-link:hover {
-        background-color: #f8f9fa;
-    }
-    
-    .guidance-item .btn-link:focus {
-        box-shadow: none;
-    }
-    
-    .guidance-item .card-body {
-        padding: 1.25rem;
-    }
-    
-    .guidance-item .bi-chevron-down {
-        transition: transform 0.2s;
-    }
-    
-    .guidance-item .collapsed .bi-chevron-down {
-        transform: rotate(-90deg);
-    }
-
-    .guidance-content {
-        color: #495057;
-        line-height: 1.6;
-    }
-
-    .guidance-content p {
-        margin-bottom: 1rem;
-    }
-
-    .guidance-content ul, 
-    .guidance-content ol {
-        margin-bottom: 1rem;
-        padding-left: 1.5rem;
-    }
-
-    .guidance-content code {
-        background-color: #e9ecef;
-        padding: 0.2rem 0.4rem;
-        border-radius: 0.25rem;
-        font-family: monospace;
-    }
-    
-    .accordion-button:not(.collapsed) {
-        background-color: #e7f1ff;
-        color: #0c63e4;
-    }
-
-    .accordion-body {
-        background-color: #f8f9fa;
-    }
-
-    .accordion-button:focus {
-        box-shadow: none;
-        border-color: rgba(0,0,0,.125);
-    }
-
-    #editor {
-        border: 1px solid #dee2e6;
-        border-radius: 4px;
-        margin-bottom: 1rem;
-    }
-
-    .ace_editor {
-        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
-        font-size: 14px;
-        line-height: 1.5;
-    }
-
-    .evaluation-result {
-        padding: 1rem;
-    }
-
-    .evaluation-result h4 {
-        color: #0d6efd;
-        margin-bottom: 1rem;
-    }
-
-    .evaluation-result ul {
-        padding-left: 1.5rem;
-    }
-
-    .evaluation-result .detailed-scores {
-        background-color: #f8f9fa;
-        padding: 1rem;
-        border-radius: 0.25rem;
-        margin: 1rem 0;
-    }
-
-    .evaluation-result strong {
-        color: #495057;
-    }
-</style>
-  <!-- Bootstrap CSS để tạo giao diện đẹp -->
+  <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Choices.js CSS để tạo dropdown có tính năng tìm kiếm -->
+  <!-- Choices.js CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
-  <!-- Ace Editor để tạo code editor -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.39.1/ace.js" integrity="sha512-tGc7XQXpQYGpFGmdQCEaYhGdJ8B64vyI9c8zdEO4vjYaWRCKYnLy+HkudtawJS3ttk/Pd7xrkRjK8ijcMMyauw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <!-- Ace Editor Modelist Extension để lấy danh sách các ngôn ngữ hỗ trợ -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.39.1/ext-modelist.min.js" integrity="sha512-GAp+4Q5VgeCXiNxD89+0KWJwPSLqXM9FgTRLhJxGjB1jjFrb6l9bYUkaTun39gcvZ89FYUXLYQEhLk8TEJztYA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <!-- Bootstrap JS để tạo form submit -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Bootstrap Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
-  <!-- Add before your other scripts -->
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/css/jd.css">
+
+  <!-- JavaScript dependencies -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.39.1/ace.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.39.1/ext-modelist.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.8/purify.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
@@ -148,56 +31,8 @@
       <%- include('partials/api-key-form', { showApiKeyForm: showApiKeyForm, message: message }) %>
       <%- include('partials/jd-form') %>
       
-      <!-- CV Upload Section -->
-      <div class="card mb-4">
-          <div class="card-body">
-              <h4>Upload CV</h4>
-              <form id="cvUploadForm" enctype="multipart/form-data">
-                  <div class="mb-3">
-                      <label for="cvFile" class="form-label">Upload your CV (PDF only)</label>
-                      <input type="file" class="form-control" id="cvFile" accept=".pdf" required>
-                  </div>
-                  <div class="mb-3">
-                      <button type="button" id="evaluateCV" class="btn btn-primary">
-                          <i class="bi bi-check-circle"></i> Evaluate CV
-                      </button>
-                      <button type="button" id="generateOptimizedCV" class="btn btn-success">
-                          <i class="bi bi-file-earmark-text"></i> Generate Optimized CV
-                      </button>
-                      <span id="cvSpinner" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
-                  </div>
-              </form>
-          </div>
-      </div>
-  
-      <!-- CV Evaluation Result Section -->
-      <div id="cvEvaluationSection" class="card mb-4" style="display: none;">
-          <div class="card-body">
-              <h4>CV Evaluation Result</h4>
-              <div class="row">
-                  <div class="col-md-4">
-                      <div class="score-circle">
-                          <h2 id="matchScore">0</h2>
-                          <p>Match Score</p>
-                      </div>
-                  </div>
-                  <div class="col-md-8">
-                      <div id="evaluationDetails"></div>
-                  </div>
-              </div>
-          </div>
-      </div>
-  
-      <!-- Optimized CV Section -->
-      <div id="optimizedCVSection" class="card mb-4" style="display: none;">
-          <div class="card-body">
-              <h4>Optimized CV Suggestions</h4>
-              <div id="optimizedCVContent"></div>
-              <button type="button" id="downloadOptimizedCV" class="btn btn-primary mt-3">
-                  <i class="bi bi-download"></i> Download Optimized CV
-              </button>
-          </div>
-      </div>
+      <%- include('partials/cv-upload-section') %>
+      <%- include('partials/cv-evaluation-section') %>
 
       <%- include('partials/question-section') %>
       <%- include('partials/answer-section') %>
@@ -205,33 +40,11 @@
   </div>
 
   <%- include('partials/scripts') %>
-  <!-- Add this before the closing </body> tag -->
+  <!-- Add the AIService script before cv-handling.js -->
+  <script src="/js/aiService.js"></script>
   <script src="/js/sample-answer-handling.js"></script>
+  <script src="/js/cv-handling.js"></script>
   </body>
   </html>
-
-  <style>
-    .score-circle {
-        width: 150px;
-        height: 150px;
-        border-radius: 50%;
-        background: #f8f9fa;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto;
-        border: 8px solid #0d6efd;
-    }
-
-    .score-circle h2 {
-        font-size: 3rem;
-        margin: 0;
-        color: #0d6efd;
-    }
-
-    .score-circle p {
-        margin: 0;
-        color: #6c757d;
-    }
-  </style>
+</body>
+</html>
