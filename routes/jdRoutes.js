@@ -33,5 +33,6 @@ router.post('/jd/generate-cover-letter', JDController.generateCoverLetter);
 router.post('/jd/evaluate-cv', JDController.evaluateCV);
 router.post('/jd/convert-cv', JDController.convertCV);
 router.post('/jd/generate-optimized-cv', JDController.generateOptimizedCV);
+router.post('/jd/set-api-key', JDController.setApiKey);
 
 module.exports = router;

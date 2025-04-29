@@ -50,7 +50,7 @@ class AIService {
 
                 - If not, reply with a JSON object: {"isValid": false, "message": "The input is not a job description (JD)"}
 
-                - If valid, create at least 10 interview questions that are relevant to that field that match the number of years of experience and level in the JD. If the JD is about programming, include code, algorithm and solution questions at the level that matches the required number of years of experience in the JD.
+                - If valid, create 5-10 interview questions that are relevant to that field that match the number of years of experience and level in the JD. If the JD is about programming, include code, algorithm and solution questions at the level that matches the required number of years of experience in the JD.
 
                 Return your response as a JSON object with this structure:
                 {

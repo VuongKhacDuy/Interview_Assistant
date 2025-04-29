@@ -27,8 +27,8 @@ const rateLimiter = new RateLimiter(5000); // 5 seconds cooldown
 exports.renderJDView = async (req, res) => {
     try {
         const apiKey = req.cookies?.apiKey;
-        // const cookieExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
-        const cookieExpiry = new Date(Date.now() + 10 * 1000); // 10 seconds from now
+        const cookieExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
+        
         // If API key exists but is expired, clear it
         if (apiKey && new Date() > new Date(req.cookies?.apiKeyExpiry)) {
             res.clearCookie('apiKey');
@@ -52,6 +52,7 @@ exports.renderJDView = async (req, res) => {
 };
 
 exports.setApiKey = async (req, res) => {
+    console.log('<<<<<<< API Key received:', req.body.apiKey);
     try {
         const { apiKey } = req.body;
         if (!apiKey) {
@@ -59,9 +60,7 @@ exports.setApiKey = async (req, res) => {
         }
 
         // Set cookies with 24-hour expiration
-        // const cookieExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
-        // Set cookies with 10-second expiration
-        const cookieExpiry = new Date(Date.now() + 10 * 1000);
+        const cookieExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
         res.cookie('apiKey', apiKey, { 
             expires: cookieExpiry,
             httpOnly: true,
