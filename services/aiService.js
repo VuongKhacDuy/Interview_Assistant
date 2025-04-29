@@ -490,24 +490,33 @@ async evaluateCV(cvContent, jdText) {
 }
 
 async generateOptimizedCV(cvContent, jdText) {
-    const prompt = `Dựa trên CV hiện tại và JD, hãy tạo một CV mới được tối ưu hóa phù hợp với vị trí. 
-    Trả về kết quả dưới dạng HTML với các sections: 
-    - Thông tin cá nhân
-    - Tóm tắt
-    - Kinh nghiệm làm việc
-    - Kỹ năng
-    - Học vấn
-    
+    const prompt = `Based on the current CV and job description (JD), create an optimized CV for the position.
+    Return the result in HTML format with the following sections:
+    - Personal Information
+    - Summary
+    - Work Experience
+    - Skills
+    - Education
+
+    Current CV: ${cvContent}
     JD: ${jdText}
-    
-    CV Content: ${cvContent}`;
+
+    Format the response in clean HTML with proper styling. Focus on:
+    1. Highlighting relevant experience and skills that match the JD
+    2. Using professional formatting
+    3. Maintaining clear section hierarchy
+    4. Including all important details from original CV
+    5. Optimizing content to match job requirements
+
+    Return only the HTML content.`;
 
     try {
         const result = await this.model.generateContent(prompt);
-        return result?.response?.candidates?.[0]?.content?.parts?.map(part => part.text).join('') || '';
+        const optimizedCV = result?.response?.candidates?.[0]?.content?.parts?.map(part => part.text).join('') || 'Could not generate CV';
+        return optimizedCV;
     } catch (error) {
-        console.error('Error generating optimized CV:', error);
-        throw new Error('Failed to generate optimized CV');
+        console.error("Error generating optimized CV:", error);
+        throw new Error("Failed to generate optimized CV");
     }
 }
 }

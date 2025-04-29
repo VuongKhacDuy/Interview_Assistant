@@ -31,5 +31,7 @@ router.post('/jd/text-to-speech', JDController.textToSpeech);
 router.post('/jd/answer-specific', JDController.answerSpecificQuestion);
 router.post('/jd/generate-cover-letter', JDController.generateCoverLetter);
 router.post('/jd/evaluate-cv', JDController.evaluateCV);
+router.post('/jd/convert-cv', JDController.convertCV);
+router.post('/jd/generate-optimized-cv', JDController.generateOptimizedCV);
 
 module.exports = router;

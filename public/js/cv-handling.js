@@ -8,8 +8,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const evaluationDetails = document.getElementById('evaluationDetails');
     const optimizedCVContent = document.getElementById('optimizedCVContent');
     const downloadOptimizedCV = document.getElementById('downloadOptimizedCV');
+    const downloadOptimizedCVDoc = document.getElementById('downloadDocCV');
+    const downloadOptimizedCVPDF = document.getElementById('downloadPdfCV');
 
-    // Hàm đọc nội dung file PDF
     async function readPdfContent(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -59,7 +60,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error('Could not extract text from PDF file. Please ensure the PDF is text-based and not scanned.');
             }
 
-            // Gửi request đến server thay vì xử lý trực tiếp
             const response = await fetch('/jd/evaluate-cv', {
                 method: 'POST',
                 headers: {
@@ -80,8 +80,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!result || !result.evaluation) {
                 throw new Error('Invalid response format from evaluation service');
             }
-
-            // Hiển thị kết quả đánh giá
             matchScore.textContent = result.evaluation.overallScore * 10;
             
             let detailsHtml = `
@@ -122,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } finally {
             cvSpinner.style.display = 'none';
             evaluateBtn.disabled = false;
-            isProcessing = false; // Reset flag khi hoàn thành
+            isProcessing = false;
         }
     });
 
@@ -131,7 +129,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const jdText = document.getElementById('jdText').value;
 
         if (!cvFile || !jdText) {
-            alert('Vui lòng tải lên CV và nhập JD trước');
+            alert('Please upload a CV and enter JD first');
             return;
         }
 
@@ -141,7 +139,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const cvContent = await readPdfContent(cvFile);
             
-            // Make a fetch request to the server instead of using AIService directly
+            if (!cvContent || cvContent.trim().length === 0) {
+                throw new Error('Could not extract text from PDF file. Please ensure the PDF is text-based and not scanned.');
+            }
+
             const response = await fetch('/jd/generate-optimized-cv', {
                 method: 'POST',
                 headers: {
@@ -154,16 +155,34 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to generate optimized CV');
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `Failed to generate optimized CV (Status: ${response.status})`);
             }
 
             const result = await response.json();
+            
+            if (!result || !result.optimizedCV) {
+                throw new Error('Invalid response format from optimization service');
+            }
+
             optimizedCVContent.innerHTML = result.optimizedCV;
             optimizedSection.style.display = 'block';
 
         } catch (error) {
             console.error('Error:', error);
-            alert('Không thể tạo CV tối ưu. Vui lòng thử lại.');
+            let errorMessage = 'Failed to generate optimized CV. ';
+            
+            if (error.message.includes('PDF')) {
+                errorMessage += 'Please ensure your PDF is text-based and not scanned.';
+            } else if (error.message.includes('API')) {
+                errorMessage += 'Please check your API key and try again.';
+            } else if (error.message.includes('format')) {
+                errorMessage += 'Received invalid response from the optimization service.';
+            } else {
+                errorMessage += error.message || 'Please try again later.';
+            }
+            
+            alert(errorMessage);
         } finally {
             cvSpinner.style.display = 'none';
             generateBtn.disabled = false;
@@ -171,7 +190,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Xử lý sự kiện tải CV tối ưu
     downloadOptimizedCV?.addEventListener('click', function() {
         const content = optimizedCVContent.innerHTML;
         const blob = new Blob([content], { type: 'text/html' });
@@ -183,5 +201,74 @@ document.addEventListener('DOMContentLoaded', function() {
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
+    });
+
+    downloadOptimizedCVDoc?.addEventListener('click', async function() {
+        const content = optimizedCVContent.innerHTML;
+
+        try {
+            const response = await fetch('/jd/convert-cv', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    html: content,
+                    format: 'doc'
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to convert CV');
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'optimized_cv.doc';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+        catch (error) {
+            console.error('Error:', error);
+            alert('Cannot download CV. Please try again.');
+        }
+    })
+
+    downloadOptimizedCVPDF?.addEventListener('click', async function() {
+        const content = optimizedCVContent.innerHTML;
+        
+        try {
+            const response = await fetch('/jd/convert-cv', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    html: content,
+                    format: 'pdf'
+                })
+            });
+    
+            if (!response.ok) {
+                throw new Error('Failed to convert CV');
+            }
+    
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'optimized_cv.pdf';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Cannot download CV. Please try again.');
+        }
     });
 });

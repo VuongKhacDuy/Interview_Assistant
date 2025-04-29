@@ -5,7 +5,12 @@
     </div>
     <div class="mb-3 d-flex gap-2">
         <button type="button" id="startSpeech" class="btn btn-primary">
-            <i class="bi bi-mic-fill"></i> Trả lời bằng giọng nói
+            <i class="bi bi-mic-fill"></i> Answer with Speech
+        </button>
+        <button type="button" id="stopSpeech" class="btn btn-danger" style="display: none;">
+            <i class="bi bi-mic-slash-fill"></i> Stop Recording
+        </button>
+        <button type="button" id="clearEditor" class="btn btn-warning">
         </button>
         <span id="speechStatus" class="badge bg-danger ms-2" style="display: none;">Đang ghi âm...</span>
         <button type="button" id="submitAnswer" class="btn btn-success">

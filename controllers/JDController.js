@@ -6,6 +6,8 @@ const RateLimiter = require('../utils/rateLimiter');
 const { getLanguageName } = require('../utils/languageUtils');
 const { extractTextFromPdf } = require('../utils/pdfUtils');
 const AIService = require('../services/aiService');
+const htmlDocx = require('html-docx-js');
+const htmlPdf = require('html-pdf-node');
 
 // Get API key from .env environment variable (GEN_API_KEY)
 const GEN_API_KEY = process.env.GEN_API_KEY;
@@ -318,6 +320,38 @@ exports.generateCoverLetter = async (req, res) => {
     }
 };
 
+exports.generateOptimizedCV = async (req, res) => {
+    try {
+        const apiKey = req.cookies?.apiKey;
+        if (!apiKey) {
+            return res.status(401).json({ 
+                error: 'API key is required' 
+            });
+        }
+
+        const { cvContent, jdText } = req.body;
+        
+        if (!cvContent || !jdText) {
+            return res.status(400).json({ 
+                error: 'CV content and JD text are required' 
+            });
+        }
+
+        const aiService = new AIService(apiKey);
+        const optimizedCV = await aiService.generateOptimizedCV(cvContent, jdText);
+        
+        res.json({ 
+            success: true, 
+            optimizedCV 
+        });
+    } catch (error) {
+        console.error('Error generating optimized CV:', error);
+        res.status(500).json({ 
+            error: 'Failed to generate optimized CV' 
+        });
+    }
+};
+
 exports.evaluateCV = async (req, res) => {
     try {
         const apiKey = req.cookies?.apiKey;
@@ -346,6 +380,119 @@ exports.evaluateCV = async (req, res) => {
         console.error('Error in CV evaluation:', error);
         res.status(500).json({ 
             error: 'Failed to evaluate CV' 
+        });
+    }
+};
+
+exports.convertCV = async (req, res) => {
+    try {
+        const { html, format } = req.body;
+        
+        if (!html || !format) {
+            return res.status(400).json({ 
+                error: 'HTML content and format are required' 
+            });
+        }
+        const cleanHtml = html.replace(/^```html\s*/, '').replace(/```\s*$/, '');
+
+        // Thêm style và wrapper cho nội dung HTML
+        const styledHtml = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        line-height: 1.6;
+                        margin: 40px;
+                    }
+                    h1, h2 {
+                        color: #333;
+                        margin-top: 20px;
+                        text-align: center;
+                    }
+
+                    h3, h4, h5 {
+                        color: #333;
+                        margin-top: 20px;
+                    }
+
+                    ul {
+                        margin: 10px 0;
+                        padding-left: 20px;
+                    }
+                    li {
+                        margin: 5px 0;
+                    }
+                    p {
+                        margin: 10px 0;
+                    }
+                    @page {
+                        margin: 0;
+                    }
+                    @media print {
+                        body {
+                            margin: 40px;
+                        }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="content">
+                    ${cleanHtml}
+                </div>
+            </body>
+            </html>
+        `;
+
+        if (format === 'doc') {
+            // Convert to DOC với HTML đã được style
+            const doc = htmlDocx.asBlob(cleanHtml);
+            res.setHeader('Content-Type', 'application/msword');
+            res.setHeader('Content-Disposition', 'attachment; filename=optimized_cv.doc');
+            res.send(doc);
+            // const docBuffer = htmlDocx.asBlob(styledHtml, {
+            //     orientation: 'portrait',
+            //     margins: {
+            //         top: 1440,    // 1 inch = 1440 twips
+            //         right: 1440,
+            //         bottom: 1440,
+            //         left: 1440
+            //     }
+            // });
+            // res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+            // res.setHeader('Content-Disposition', 'attachment; filename=optimized_cv.docx');
+            // res.send(docBuffer);
+        } 
+        else if (format === 'pdf') {
+            // Convert to PDF với HTML đã được style
+            const options = { 
+                format: 'A4',
+                margin: {
+                    top: '40px',
+                    right: '40px',
+                    bottom: '40px',
+                    left: '40px'
+                },
+                printBackground: true
+            };
+            const file = { content: styledHtml };
+            
+            const pdfBuffer = await htmlPdf.generatePdf(file, options);
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', 'attachment; filename=optimized_cv.pdf');
+            res.send(pdfBuffer);
+        } 
+        else {
+            res.status(400).json({ 
+                error: 'Invalid format. Supported formats are "doc" and "pdf"' 
+            });
+        }
+    } catch (error) {
+        console.error('Error converting CV:', error);
+        res.status(500).json({ 
+            error: 'Failed to convert CV' 
         });
     }
 };
