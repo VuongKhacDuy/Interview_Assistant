@@ -21,9 +21,11 @@ function loadConfig() {
 }
 
 loadConfig();
+// Import routes
 const jdRoutes = require('./routes/jdRoutes');
 const jobRoutes = require('./routes/jobRoutes');
 const algorithmRoutes = require('./routes/algorithmRoutes');
+const translateRoutes = require('./routes/translateRoutes');
 
 const app = express();
 let PORT = process.env.PORT || 3000;
@@ -63,7 +65,8 @@ async function startServer() {
     app.use(express.static('public'));
     app.use('/', jdRoutes);
     app.use('/', jobRoutes);
-    app.use('/', algorithmRoutes);  // Thêm route mới
+    app.use('/', algorithmRoutes);
+    app.use('/', translateRoutes);
 
     // Find available port
     PORT = await findAvailablePort(PORT);

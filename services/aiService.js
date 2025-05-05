@@ -451,6 +451,23 @@ class AIService {
             throw new Error('Failed to translate text');
         }
     }
+
+    
+    async translate(sourceText, sourceLanguage, targetLanguage) { 
+        const prompt = `Translate the following text from ${sourceLanguage} to ${targetLanguage}: 
+        
+        ${sourceText} 
+        
+        Only return the translated text without any additional explanation or formatting.`; 
+    
+        try { 
+            const result = await this.model.generateContent(prompt); 
+            return result?.response?.candidates?.[0]?.content?.parts?.[0]?.text || 'Translation failed'; 
+        } catch (error) { 
+            console.error('Translation error:', error); 
+            throw error; 
+        } 
+    }
     
 
 async evaluateCV(cvContent, jdText) {
