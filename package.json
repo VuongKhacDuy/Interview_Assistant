@@ -33,15 +33,20 @@
     "@google-cloud/text-to-speech": "^6.0.1",
     "@google/generative-ai": "^0.24.0",
     "cookie-parser": "^1.4.7",
+    "docx": "^9.5.0",
+    "docx-parser": "^0.2.1",
     "dotenv": "^16.4.7",
     "ejs": "^3.1.10",
     "express": "^4.21.2",
     "html-docx-js": "^0.3.1",
     "html-pdf-node": "^1.0.8",
     "html-to-docx": "^1.8.0",
+    "mammoth": "^1.9.0",
     "marked": "^15.0.7",
     "multer": "^1.4.5-lts.2",
-    "pdf-parse": "^1.1.1"
+    "pdf-lib": "^1.17.1",
+    "pdf-parse": "^1.1.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "nodemon": "^3.1.9",

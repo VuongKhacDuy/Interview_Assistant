@@ -1,6 +1,11 @@
 const fs = require('fs').promises;
 const path = require('path');
 const AIService = require('../services/aiService');
+const mammoth = require('mammoth');
+const xlsx = require('xlsx');
+const pdfParse = require('pdf-parse');
+const docx = require('docx');
+const { Document, Paragraph, TextRun } = docx;
 
 class TranslateController {
     static renderTranslateView(req, res) {
@@ -73,40 +78,90 @@ class TranslateController {
             let contentType;
 
             // Handle different file types
-            switch (fileExt) {
-                case '.csv':
-                case '.txt':
-                    fileContent = req.file.buffer.toString('utf8');
-                    contentType = 'text/plain';
-                    break;
-                case '.xlsx':
-                case '.xls':
-                    return res.status(400).json({ 
-                        error: 'Excel file translation is not supported yet. Please export to CSV first.' 
+            try {
+                switch (fileExt) {
+                    case '.csv':
+                    case '.txt':
+                        fileContent = req.file.buffer.toString('utf8');
+                        contentType = 'text/plain';
+                        break;
+                    case '.xlsx':
+                    case '.xls':
+                        const workbook = xlsx.read(req.file.buffer);
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        fileContent = xlsx.utils.sheet_to_csv(firstSheet);
+                        contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+                        break;
+                    case '.docx':
+                        const result = await mammoth.extractRawText({ buffer: req.file.buffer, styleMap: [
+                            "p[style-name='Heading 1'] => h1",
+                            "p[style-name='Heading 2'] => h2",
+                            "p[style-name='Normal'] => p"
+                        ]});
+                        fileContent = result.value;
+                        contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+                        break;
+                    case '.pdf':
+                        const pdfData = await pdfParse(req.file.buffer);
+                        fileContent = pdfData.text;
+                        contentType = 'text/plain';
+                        break;
+                    default:
+                        return res.status(400).json({ 
+                            error: 'Unsupported file type. Supported types: TXT, CSV, XLSX, DOCX, PDF' 
+                        });
+                }
+
+                const translation = await aiService.translate(
+                    fileContent,
+                    sourceLanguage,
+                    targetLanguage,
+                    translationType,
+                    true // preserve formatting
+                );
+
+                // Handle Excel files separately after translation
+                if (fileExt === '.xlsx' || fileExt === '.xls') {
+                    const newWorkbook = xlsx.utils.book_new();
+                    // Parse the translated CSV content into array of arrays
+                    const rows = translation.split('\n').map(row => row.split(','));
+                    const translatedSheet = xlsx.utils.aoa_to_sheet(rows);
+                    xlsx.utils.book_append_sheet(newWorkbook, translatedSheet, 'Translated');
+                    const excelBuffer = xlsx.write(newWorkbook, { type: 'buffer', bookType: 'xlsx' });
+                    res.setHeader('Content-Type', contentType);
+                    res.setHeader('Content-Disposition', `attachment; filename=translated_${req.file.originalname}`);
+                    return res.send(excelBuffer);
+                }
+
+                // Handle Word files separately after translation
+                if (fileExt === '.docx') {
+                    const doc = new Document({
+                        sections: [{
+                            properties: {},
+                            children: translation.split('\n').map(para => 
+                                new Paragraph({
+                                    children: [new TextRun({ text: para })]
+                                })
+                            )
+                        }]
                     });
-                case '.docx':
-                case '.doc':
-                    return res.status(400).json({ 
-                        error: 'Word document translation is not supported yet. Please save as plain text first.' 
-                    });
-                default:
-                    return res.status(400).json({ 
-                        error: 'Unsupported file type. Please use TXT or CSV files.' 
-                    });
+                    const buffer = await Packer.toBuffer(doc);
+                    res.setHeader('Content-Type', contentType);
+                    res.setHeader('Content-Disposition', `attachment; filename=translated_${req.file.originalname}`);
+                    return res.send(buffer);
+                }
+
+                // Send translated content with appropriate headers for other file types
+                res.setHeader('Content-Type', contentType);
+                res.setHeader('Content-Disposition', `attachment; filename=translated_${req.file.originalname}`);
+                res.send(translation);
+
+            } catch (error) {
+                console.error('File processing error:', error);
+                return res.status(400).json({ 
+                    error: 'Error processing file. Please make sure the file is not corrupted.' 
+                });
             }
-
-            const translation = await aiService.translate(
-                fileContent,
-                sourceLanguage,
-                targetLanguage,
-                translationType,
-                true // preserve formatting
-            );
-
-            // Send translated content with appropriate headers
-            res.setHeader('Content-Type', contentType);
-            res.setHeader('Content-Disposition', `attachment; filename=translated_${req.file.originalname}`);
-            res.send(translation);
         } catch (error) {
             console.error('Document translation error:', error);
             res.status(500).json({ error: 'Failed to translate document' });
