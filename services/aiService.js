@@ -452,23 +452,35 @@ class AIService {
         }
     }
 
-    
-    async translate(sourceText, sourceLanguage, targetLanguage) { 
-        const prompt = `Translate the following text from ${sourceLanguage} to ${targetLanguage}: 
-        
-        ${sourceText} 
-        
-        Only return the translated text without any additional explanation or formatting.`; 
-    
-        try { 
-            const result = await this.model.generateContent(prompt); 
-            return result?.response?.candidates?.[0]?.content?.parts?.[0]?.text || 'Translation failed'; 
-        } catch (error) { 
-            console.error('Translation error:', error); 
-            throw error; 
-        } 
+    async translate(sourceText, sourceLanguage, targetLanguage, translationType, preserveFormatting = false) {
+        let prompt;
+        if (preserveFormatting) {
+            prompt = `Translate the following text from ${sourceLanguage} to ${targetLanguage}. 
+Translation type: ${translationType}.
+IMPORTANT: Preserve all formatting, including line breaks, spaces, and special characters exactly as they appear in the source text.
+
+Source text:
+${sourceText}
+
+Translated text:`;
+        } else {
+            prompt = `Translate the following text from ${sourceLanguage} to ${targetLanguage}. 
+Translation type: ${translationType}.
+
+Source text:
+${sourceText}
+
+Translated text:`;
+        }
+
+        try {
+            const result = await this.model.generateContent(prompt);
+            return result?.response?.candidates?.[0]?.content?.parts?.[0]?.text || 'Translation failed';
+        } catch (error) {
+            console.error('Translation error:', error);
+            throw error;
+        }
     }
-    
 
 async evaluateCV(cvContent, jdText) {
     const prompt = `Bạn là một chuyên gia tuyển dụng có kinh nghiệm. Hãy đánh giá CV của ứng viên dựa trên yêu cầu công việc (JD).

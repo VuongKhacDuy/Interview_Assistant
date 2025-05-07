@@ -11,6 +11,8 @@
             background-color: #f8f9fa;
             border-radius: 8px;
             padding: 20px;
+            width: 100%;
+            margin: 0 auto;
         }
         .language-swap {
             cursor: pointer;
@@ -19,6 +21,36 @@
             transition: background-color 0.3s;
         }
         .language-swap:hover {
+            background-color: #e9ecef;
+        }
+        .container {
+            max-width: 100% !important;
+            width: 100%;
+            padding: 0 30px;
+        }
+        .form-control, .form-select {
+            width: 100%;
+        }
+        .col-md-5 {
+            padding: 0 5px;
+            width: 45%;
+        }
+        .col-md-2 {
+            width: 10%;
+            padding: 0;
+        }
+        .document-upload-area {
+            background-color: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .document-upload-area:hover {
+            border-color: #0d6efd;
+            background-color: #e9ecef;
+        }
+        .document-upload-area.drag-over {
+            border-color: #0d6efd;
             background-color: #e9ecef;
         }
     </style>
@@ -33,35 +65,98 @@
             <div class="mb-4">
                 <h2>Translation Assistant</h2>
                 <form id="translateForm" class="mt-3">
-                    <div class="row">
-                        <div class="col-md-5">
-                            <div class="mb-3">
-                                <select class="form-select mb-2" id="sourceLanguage">
-                                    <option value="auto">Tự động phát hiện</option>
-                                    <option value="vi">Tiếng Việt</option>
-                                    <option value="en">English</option>
-                                    <option value="zh">中文</option>
-                                </select>
-                                <textarea class="form-control" id="sourceText" rows="8" placeholder="Nhập văn bản cần dịch..."></textarea>
+                    <ul class="nav nav-tabs mb-3" id="translateTabs">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="text-tab" data-bs-toggle="tab" href="#text-content">Văn bản</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="document-tab" data-bs-toggle="tab" href="#document-content">Tài liệu</a>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="text-content">
+                            <div class="row">
+                                <div class="mb-3">
+                                    <select class="form-select mb-2" id="translationType">
+                                        <option value="professional">Chuyên nghiệp</option>
+                                        <option value="natural">Tự nhiên</option>
+                                        <option value="academic">Học thuật</option>
+                                        <option value="technical">Kỹ thuật</option>
+                                    </select>
+                                </div>
+                                <!-- Phần văn bản hiện tại -->
+                                <div class="col-md-5">                         
+                                    <div class="mb-3">
+                                        <select class="form-select mb-2" id="sourceLanguage">
+                                            <option value="auto">Tự động phát hiện</option>
+                                            <option value="vi">Tiếng Việt</option>
+                                            <option value="en">English</option>
+                                            <option value="zh">中文</option>
+                                        </select>
+                                        <textarea class="form-control" id="sourceText" rows="8" placeholder="Nhập văn bản cần dịch..."></textarea>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 d-flex align-items-center justify-content-center">
+                                    <div class="language-swap" id="swapLanguages">
+                                        <i class="bi bi-arrow-left-right"></i>
+                                    </div>
+                                </div>
+                                <div class="col-md-5">
+                                    <div class="mb-3">
+                                        <select class="form-select mb-2" id="targetLanguage">
+                                            <option value="vi">Tiếng Việt</option>
+                                            <option value="en" selected>English</option>
+                                            <option value="zh">中文</option>
+                                        </select>
+                                        <textarea class="form-control" id="translatedText" rows="8" readonly></textarea>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-secondary" id="copyTranslation">
+                                        <i class="bi bi-clipboard"></i> Sao chép bản dịch
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-2 d-flex align-items-center justify-content-center">
-                            <div class="language-swap" id="swapLanguages">
-                                <i class="bi bi-arrow-left-right"></i>
+                        
+                        <div class="tab-pane fade" id="document-content">
+                            <div class="row">
+                                <div class="mb-3">
+                                    <select class="form-select mb-2" id="documentTranslationType">
+                                        <option value="professional">Chuyên nghiệp</option>
+                                        <option value="natural">Tự nhiên</option>
+                                        <option value="academic">Học thuật</option>
+                                        <option value="technical">Kỹ thuật</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 mb-3">
+                                    <div class="document-upload-area p-4 border rounded text-center">
+                                        <i class="bi bi-cloud-upload fs-2 mb-2"></i>
+                                        <h5>Kéo thả hoặc chọn tài liệu</h5>
+                                        <p class="text-muted">Hỗ trợ PDF, DOCX, TXT, XLSX, CSV</p>
+                                        <input type="file" class="form-control" id="documentFile" accept=".pdf,.docx,.txt,.xlsx,.csv">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <select class="form-select mb-2" id="documentSourceLanguage">
+                                        <option value="auto">Tự động phát hiện</option>
+                                        <option value="vi">Tiếng Việt</option>
+                                        <option value="en">English</option>
+                                        <option value="zh">中文</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <select class="form-select mb-2" id="documentTargetLanguage">
+                                        <option value="vi">Tiếng Việt</option>
+                                        <option value="en" selected>English</option>
+                                        <option value="zh">中文</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 mt-3">
+                                    <button type="button" class="btn btn-primary" id="translateDocument" disabled>
+                                        <i class="bi bi-translate"></i> Dịch tài liệu
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-5">
-                            <div class="mb-3">
-                                <select class="form-select mb-2" id="targetLanguage">
-                                    <option value="vi">Tiếng Việt</option>
-                                    <option value="en" selected>English</option>
-                                    <option value="zh">中文</option>
-                                </select>
-                                <textarea class="form-control" id="translatedText" rows="8" readonly></textarea>
-                            </div>
-                            <button type="button" class="btn btn-outline-secondary" id="copyTranslation">
-                                <i class="bi bi-clipboard"></i> Sao chép bản dịch
-                            </button>
                         </div>
                     </div>
                 </form>

@@ -9,17 +9,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let translationTimeout;
 
-    // Xử lý sự kiện nhập text để dịch
+    // Handle translation when the source text is changed
     sourceText.addEventListener('input', function() {
         clearTimeout(translationTimeout);
         translationTimeout = setTimeout(translateText, 500);
     });
 
-    // Xử lý sự kiện đổi ngôn ngữ
+    // Handle translation when the source language or target language is changed
     sourceLanguage.addEventListener('change', translateText);
     targetLanguage.addEventListener('change', translateText);
 
-    // Xử lý sự kiện hoán đổi ngôn ngữ
+    // Handle swapping languages
     swapBtn.addEventListener('click', function() {
         if (sourceLanguage.value === 'auto') return;
 
@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Xử lý sự kiện copy bản dịch
+    // Handle copying translation
     copyBtn.addEventListener('click', function() {
         translatedText.select();
         document.execCommand('copy');
@@ -47,6 +47,11 @@ document.addEventListener('DOMContentLoaded', function() {
             copyBtn.innerHTML = originalText;
         }, 2000);
     });
+
+    const translationType = document.getElementById('translationType');
+
+    // Add event listener for translation type change
+    translationType.addEventListener('change', translateText);
 
     async function translateText() {
         const text = sourceText.value.trim();
@@ -64,7 +69,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify({
                     sourceText: text,
                     sourceLanguage: sourceLanguage.value,
-                    targetLanguage: targetLanguage.value
+                    targetLanguage: targetLanguage.value,
+                    translationType: translationType.value
                 })
             });
 
@@ -80,4 +86,127 @@ document.addEventListener('DOMContentLoaded', function() {
             translatedText.value = 'Lỗi dịch. Vui lòng thử lại.';
         }
     }
+
+    // Xử lý tài liệu
+    const documentFile = document.getElementById('documentFile');
+    const documentUploadArea = document.querySelector('.document-upload-area');
+    const translateDocumentBtn = document.getElementById('translateDocument');
+    const documentSourceLanguage = document.getElementById('documentSourceLanguage');
+    const documentTargetLanguage = document.getElementById('documentTargetLanguage');
+    const documentTranslationType = document.getElementById('documentTranslationType');
+
+    // Xử lý kéo thả
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        documentUploadArea.addEventListener(eventName, preventDefaults, false);
+        document.body.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        documentUploadArea.addEventListener(eventName, highlight, false);
+        document.body.addEventListener(eventName, () => {
+            documentUploadArea.classList.add('drag-over');
+        }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        documentUploadArea.addEventListener(eventName, unhighlight, false);
+        document.body.addEventListener(eventName, () => {
+            documentUploadArea.classList.remove('drag-over');
+        }, false);
+    });
+
+    function highlight() {
+        documentUploadArea.classList.add('drag-over');
+    }
+
+    function unhighlight() {
+        documentUploadArea.classList.remove('drag-over');
+    }
+
+    documentUploadArea.addEventListener('drop', handleDrop, false);
+    document.body.addEventListener('drop', (e) => {
+        handleDrop(e);
+    }, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFiles(files);
+    }
+
+    documentFile.addEventListener('change', function() {
+        handleFiles(this.files);
+    });
+
+    function handleFiles(files) {
+        if (files.length > 0) {
+            const file = files[0];
+            // Kiểm tra định dạng file
+            const validTypes = ['.pdf', '.docx', '.txt', '.xlsx', '.csv'];
+            const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+            
+            if (!validTypes.includes(fileExtension)) {
+                alert('Định dạng file không được hỗ trợ. Vui lòng chọn file PDF, DOCX, TXT, XLSX hoặc CSV.');
+                return;
+            }
+
+            // Kiểm tra kích thước file (giới hạn 10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                alert('Kích thước file không được vượt quá 10MB.');
+                return;
+            }
+
+            translateDocumentBtn.disabled = false;
+        } else {
+            translateDocumentBtn.disabled = true;
+        }
+    }
+
+    translateDocumentBtn.addEventListener('click', async function() {
+        const file = documentFile.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('sourceLanguage', documentSourceLanguage.value);
+        formData.append('targetLanguage', documentTargetLanguage.value);
+        formData.append('translationType', documentTranslationType.value);
+
+        try {
+            translateDocumentBtn.disabled = true;
+            translateDocumentBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Đang xử lý...';
+
+            const response = await fetch('/translate/document', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `translated_${file.name}`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            alert('Dịch tài liệu thành công!');
+        } catch (error) {
+            console.error('Translation error:', error);
+            alert('Lỗi khi dịch tài liệu. Vui lòng thử lại.');
+        } finally {
+            translateDocumentBtn.disabled = false;
+            translateDocumentBtn.innerHTML = '<i class="bi bi-translate"></i> Dịch tài liệu';
+        }
+    });
 });
