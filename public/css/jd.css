@@ -142,3 +142,17 @@
     margin: 0;
     color: #6c757d;
 }
+
+.position-relative {
+    position: relative;
+}
+
+.text-overlay-item {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 2px;
+    border-radius: 2px;
+    font-size: inherit;
+    line-height: normal;
+    white-space: nowrap;
+}

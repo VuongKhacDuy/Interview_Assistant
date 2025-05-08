@@ -53,6 +53,23 @@
             border-color: #0d6efd;
             background-color: #e9ecef;
         }
+        .image-upload-area {
+            background-color: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .image-upload-area:hover {
+            border-color: #0d6efd;
+            background-color: #e9ecef;
+        }
+        .image-upload-area.drag-over {
+            border-color: #0d6efd;
+            background-color: #e9ecef;
+        }
+        .preview-area, .translation-area {
+            min-height: 200px;
+        }
     </style>
 </head>
 <body>
@@ -71,6 +88,9 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" id="document-tab" data-bs-toggle="tab" href="#document-content">Tài liệu</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="image-tab" data-bs-toggle="tab" href="#image-content">Hình ảnh</a>
                         </li>
                     </ul>
                     
@@ -166,6 +186,60 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <%- include('partials/image-tab') %>
+                        <!-- <div class="tab-pane fade" id="image-content">
+                            <div class="row">
+                                <div class="col-12 mb-3">
+                                    <div class="image-upload-area p-4 border rounded text-center">
+                                        <i class="bi bi-image fs-2 mb-2"></i>
+                                        <h5>Kéo thả hoặc chọn hình ảnh</h5>
+                                        <p class="text-muted">Hỗ trợ JPG, PNG, GIF</p>
+                                        <input type="file" class="form-control" id="imageFile" accept=".jpg,.jpeg,.png,.gif">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <select class="form-select mb-2" id="imageSourceLanguage">
+                                        <option value="auto">Tự động phát hiện</option>
+                                        <option value="vi">Tiếng Việt</option>
+                                        <option value="en">English</option>
+                                        <option value="zh">中文</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <select class="form-select mb-2" id="imageTargetLanguage">
+                                        <option value="vi">Tiếng Việt</option>
+                                        <option value="en" selected>English</option>
+                                        <option value="zh">中文</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="preview-area mb-3 p-3 border rounded">
+                                                <h6>Hình ảnh gốc</h6>
+                                                <img id="imagePreview" class="img-fluid d-none" alt="Preview">
+                                                <div id="detectedText" class="mt-3 d-none">
+                                                    <h6>Văn bản phát hiện được:</h6>
+                                                    <p class="text-muted"></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="translation-area mb-3 p-3 border rounded">
+                                                <h6>Bản dịch</h6>
+                                                <div id="translatedImageText" class="text-muted"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12 mt-3">
+                                    <button type="button" class="btn btn-primary" id="translateImage" disabled>
+                                        <i class="bi bi-translate"></i> Dịch
+                                    </button>
+                                </div>
+                            </div>
+                        </div> -->
                     </div>
                 </form>
             </div>

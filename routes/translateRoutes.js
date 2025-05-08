@@ -18,5 +18,7 @@ const storage = multer.diskStorage({
 router.get('/translate', translateController.renderTranslateView);
 router.post('/translate', translateController.translate);
 router.post('/translate/document', upload.single('file'), translateController.translateDocument);
+router.post('/translate/detect-text', upload.single('image'), translateController.detectText);
+router.post('/translate/image-text', translateController.translateDetectedText);
 
 module.exports = router;

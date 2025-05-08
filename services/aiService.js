@@ -457,29 +457,12 @@ class AIService {
         if (preserveFormatting) {
             prompt = `Translate the following text from ${sourceLanguage} to ${targetLanguage}. 
             Translation type: ${translationType}.
-            IMPORTANT: 
-            1. Preserve all formatting, including:
-               - Line breaks and paragraph structure
-               - Spaces and indentation
-               - Special characters and symbols
-               - Technical terms in quotes
-               - HTML entities and tags (keep them unchanged)
-            2. Maintain professional writing style:
-               - Use formal and respectful language
-               - Employ industry-standard terminology
-               - Follow technical writing conventions
-               - Ensure clarity and precision
-            3. HTML handling:
-               - Preserve HTML entities (e.g. &amp; &quot; &lt; &gt;)
-               - Preserve HTML tags intact (e.g. <p>, <div>, <span>)
-               - Only translate the text content between tags
-               - Keep & and ; intact
-               - Only translate the text content between tags
+            IMPORTANT: Preserve all formatting, including line breaks, spaces, and special characters exactly as they appear in the source text.
 
-        Source text:
-        ${sourceText}
+            Source text:
+            ${sourceText}
 
-        Translated text:`;
+            Translated text:`;
         } else {
             prompt = `Translate the following text from ${sourceLanguage} to ${targetLanguage}. 
             Translation type: ${translationType}.
@@ -602,8 +585,7 @@ Please provide a comprehensive solution in ${language} with:
 3. Implementation
    - Well-commented code in ${language}
    - Explanation of key steps
-   - Test cases with execution time measurements
-   - Performance benchmarks and timing analysis
+   - Test cases
 
 4. Alternative Approaches (if applicable)
    - Other possible solutions
@@ -621,6 +603,31 @@ All explanations should be in ${languageMap[outputLanguage] || 'Vietnamese'}, bu
         throw new Error('Failed to solve algorithm problem');
     }
 }
+    async translateImageText(text, targetLanguage, contentType = 'text') {
+        console.log('1 >>>>>>>>>>>> Text:', text);
+
+        const prompt = `Translate this text to ${targetLanguage}. 
+        IMPORTANT:
+        - Translate ONLY the exact text provided
+        - Do NOT add any explanations
+        - Do NOT add any interpretations
+        - Do NOT add any additional context
+        - Keep the same formatting and structure
+        - Maintain line breaks and spacing exactly as in the source
+
+        Text to translate:
+        ${text}
+
+        Translation:`;    
+
+        try {
+            const result = await this.model.generateContent(prompt);
+            const translation = result?.response?.candidates?.[0]?.content?.parts?.[0]?.text || 'Translation failed';
+            return translation.trim();
+        } catch (error) {
+            throw new Error('Failed to translate text');
+        }
+    }
 }
 
 module.exports = AIService;

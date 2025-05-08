@@ -96,10 +96,24 @@ document.addEventListener('DOMContentLoaded', function() {
     const documentTranslationType = document.getElementById('documentTranslationType');
 
     // Xử lý kéo thả
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        documentUploadArea.addEventListener(eventName, preventDefaults, false);
-        document.body.addEventListener(eventName, preventDefaults, false);
-    });
+    // Only add event listeners if elements exist
+    if (documentUploadArea) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            documentUploadArea.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            documentUploadArea.addEventListener(eventName, highlight, false);
+            document.body.addEventListener(eventName, () => {
+                documentUploadArea.classList.add('drag-over');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            documentUploadArea.addEventListener(eventName, unhighlight, false);
+        });
+    }
 
     function preventDefaults(e) {
         e.preventDefault();
@@ -209,4 +223,175 @@ document.addEventListener('DOMContentLoaded', function() {
             translateDocumentBtn.innerHTML = '<i class="bi bi-translate"></i> Dịch tài liệu';
         }
     });
+});
+
+// Xử lý upload và preview hình ảnh
+const imageUploadArea = document.querySelector('.image-upload-area');
+const imageFileInput = document.getElementById('imageFile');
+const imagePreview = document.getElementById('imagePreview');
+const detectedText = document.getElementById('detectedText');
+const translatedImageText = document.getElementById('translatedImageText');
+const translateImageBtn = document.getElementById('translateImage');
+
+// Xử lý drag & drop
+imageUploadArea?.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    imageUploadArea.classList.add('drag-over');
+});
+
+imageUploadArea?.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    imageUploadArea.classList.remove('drag-over');
+});
+
+imageUploadArea?.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    imageUploadArea.classList.remove('drag-over');
+    
+    const files = e.dataTransfer.files;
+    if (files.length) {
+        imageFileInput.files = files;
+        handleImageUpload(files[0]);
+    }
+});
+
+// Xử lý khi chọn file qua input
+imageFileInput?.addEventListener('change', (e) => {
+    if (e.target.files.length) {
+        handleImageUpload(e.target.files[0]);
+    }
+});
+
+// Hàm xử lý upload hình ảnh
+async function handleImageUpload(file) {
+    // Kiểm tra file type
+    if (!file.type.match('image.*')) {
+        alert('Vui lòng chọn file hình ảnh');
+        return;
+    }
+
+    // Hiển thị preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        imagePreview.src = e.target.result;
+        imagePreview.classList.remove('d-none');
+    };
+    reader.readAsDataURL(file);
+
+    // Gọi API OCR để detect text
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('sourceLanguage', document.getElementById('imageSourceLanguage').value);
+    formData.append('targetLanguage', document.getElementById('imageTargetLanguage').value);
+    
+    try {
+        const response = await fetch('/translate/detect-text', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error('Lỗi khi detect text');
+        }
+
+        const data = await response.json();
+        
+        if (!data.textBlocks || data.textBlocks.length === 0) {
+            throw new Error('Không phát hiện được text trong ảnh');
+        }
+        
+        // Xóa nội dung cũ
+        detectedText.innerHTML = '';
+        
+        // Hiển thị các text block đã detect
+        data.textBlocks.forEach(block => {
+            const textElement = document.createElement('div');
+            textElement.textContent = block.text;
+            textElement.style = block.style;
+            detectedText.appendChild(textElement);
+        });
+        
+        detectedText.classList.remove('d-none');
+        translateImageBtn.disabled = false;
+
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Không thể detect text trong ảnh. Vui lòng thử lại.');
+    }
+}
+
+// Xử lý dịch text từ ảnh
+translateImageBtn?.addEventListener('click', async () => {
+    const detectedTextBlocks = document.querySelectorAll('#detectedText > div');
+    const targetLanguage = document.getElementById('imageTargetLanguage').value;
+
+    if (!detectedTextBlocks.length) {
+        alert('Không có text để dịch');
+        return;
+    }
+
+    try {
+        const textBlocksData = Array.from(detectedTextBlocks).map(block => ({
+            text: block.textContent,
+            style: block.getAttribute('style')
+        }));
+
+        // Split text blocks into smaller batches to avoid rate limits
+        const batchSize = 5;
+        const batches = [];
+        for (let i = 0; i < textBlocksData.length; i += batchSize) {
+            batches.push(textBlocksData.slice(i, i + batchSize));
+        }
+
+        const translatedBlocks = [];
+        const translatedTextOverlay = document.getElementById('translatedTextOverlay');
+        translatedTextOverlay.innerHTML = '';
+
+        // Process each batch with delay
+        for (const batch of batches) {
+            try {
+                const response = await fetch('/translate/image-text', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        textBlocks: batch,
+                        targetLanguage
+                    })
+                });
+
+                if (!response.ok) {
+                    if (response.status === 429) {
+                        // Wait for 2 seconds before retrying on rate limit
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        continue;
+                    }
+                    throw new Error('Lỗi khi dịch text');
+                }
+
+                const data = await response.json();
+                data.textBlocks.forEach(block => {
+                    const translatedBlock = document.createElement('div');
+                    translatedBlock.textContent = block.translatedText || 'Không thể dịch';
+                    translatedBlock.style = block.style;
+                    translatedTextOverlay.appendChild(translatedBlock);
+                });
+
+                // Add delay between batches
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+            } catch (error) {
+                console.error('Error translating batch:', error);
+                // Continue with next batch even if current fails
+                continue;
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Không thể dịch text. Vui lòng thử lại.');
+    }
 });
