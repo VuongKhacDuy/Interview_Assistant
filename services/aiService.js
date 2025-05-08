@@ -456,21 +456,38 @@ class AIService {
         let prompt;
         if (preserveFormatting) {
             prompt = `Translate the following text from ${sourceLanguage} to ${targetLanguage}. 
-Translation type: ${translationType}.
-IMPORTANT: Preserve all formatting, including line breaks, spaces, and special characters exactly as they appear in the source text.
+            Translation type: ${translationType}.
+            IMPORTANT: 
+            1. Preserve all formatting, including:
+               - Line breaks and paragraph structure
+               - Spaces and indentation
+               - Special characters and symbols
+               - Technical terms in quotes
+               - HTML entities and tags (keep them unchanged)
+            2. Maintain professional writing style:
+               - Use formal and respectful language
+               - Employ industry-standard terminology
+               - Follow technical writing conventions
+               - Ensure clarity and precision
+            3. HTML handling:
+               - Preserve HTML entities (e.g. &amp; &quot; &lt; &gt;)
+               - Preserve HTML tags intact (e.g. <p>, <div>, <span>)
+               - Only translate the text content between tags
+               - Keep & and ; intact
+               - Only translate the text content between tags
 
-Source text:
-${sourceText}
+        Source text:
+        ${sourceText}
 
-Translated text:`;
+        Translated text:`;
         } else {
             prompt = `Translate the following text from ${sourceLanguage} to ${targetLanguage}. 
-Translation type: ${translationType}.
+            Translation type: ${translationType}.
 
-Source text:
-${sourceText}
+            Source text:
+            ${sourceText}
 
-Translated text:`;
+            Translated text:`;
         }
 
         try {
@@ -585,7 +602,8 @@ Please provide a comprehensive solution in ${language} with:
 3. Implementation
    - Well-commented code in ${language}
    - Explanation of key steps
-   - Test cases
+   - Test cases with execution time measurements
+   - Performance benchmarks and timing analysis
 
 4. Alternative Approaches (if applicable)
    - Other possible solutions
