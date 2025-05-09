@@ -605,8 +605,9 @@ All explanations should be in ${languageMap[outputLanguage] || 'Vietnamese'}, bu
 }
     async translateImageText(text, targetLanguage, contentType = 'text') {
         console.log('1 >>>>>>>>>>>> Text:', text);
+        console.log('1 >>>>>>>>>>>> targetLanguage:', targetLanguage);
 
-        const prompt = `Translate this text to ${targetLanguage}. 
+        const prompt = `Translate this ${text} to ${targetLanguage}. 
         IMPORTANT:
         - Translate ONLY the exact text provided
         - Do NOT add any explanations

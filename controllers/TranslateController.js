@@ -191,7 +191,7 @@ class TranslateController {
                 targetLanguage
             });
     
-            const worker = await createWorker(['eng', 'vie', 'jpn', 'fra', 'spa']);
+            const worker = await createWorker(['eng', 'vie', 'jpn', 'fra', 'spa', 'chi_sim', 'chi_tra', 'kor']);
             console.log('Tesseract worker created successfully');
             
             try {

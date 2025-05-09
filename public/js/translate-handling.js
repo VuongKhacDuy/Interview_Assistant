@@ -303,10 +303,8 @@ async function handleImageUpload(file) {
             throw new Error('Không phát hiện được text trong ảnh');
         }
         
-        // Xóa nội dung cũ
         detectedText.innerHTML = '';
-        
-        // Hiển thị các text block đã detect
+
         data.textBlocks.forEach(block => {
             const textElement = document.createElement('div');
             textElement.textContent = block.text;
@@ -323,7 +321,7 @@ async function handleImageUpload(file) {
     }
 }
 
-// Xử lý dịch text từ ảnh
+// handle translate image text
 translateImageBtn?.addEventListener('click', async () => {
     const detectedTextBlocks = document.querySelectorAll('#detectedText > div');
     const targetLanguage = document.getElementById('imageTargetLanguage').value;

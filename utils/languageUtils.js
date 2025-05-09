@@ -4,7 +4,11 @@
 const languageCodeToName = {
     'vi': 'Vietnamese',
     'en': 'English',
-    'zh': 'Chinese'
+    'zh': 'Chinese',
+    'ja': 'Japanese',  // Thêm tiếng Nhật
+    'ko': 'Korean',    // Thêm tiếng Hàn
+    'fr': 'French',    // Thêm tiếng Pháp
+    // Thêm các ngôn ngữ khác
 };
 
 /**
