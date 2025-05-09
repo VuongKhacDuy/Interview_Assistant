@@ -1,0 +1,37 @@
+<div class="tab-pane fade show active" id="ai-content">
+    <ul class="nav nav-tabs mb-3" id="aiDetectorTabs">
+        <li class="nav-item">
+            <a class="nav-link active" id="text-tab" data-bs-toggle="tab" href="#text-content">Văn bản</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="file-tab" data-bs-toggle="tab" href="#file-content">Tập tin</a>
+        </li>
+    </ul>
+    
+    <div class="tab-content">
+        <!-- Tab Văn bản AI -->
+        <div class="tab-pane fade show active" id="text-content">
+            <div class="mb-3">
+                <textarea class="form-control" id="aiSourceText" rows="8" 
+                    placeholder="Nhập văn bản cần kiểm tra AI..."></textarea>
+            </div>
+            <button type="button" class="btn btn-primary" id="detectAIText">
+                <i class="bi bi-search"></i> Kiểm tra
+            </button>
+        </div>
+        
+        <!-- Tab Tập tin AI -->
+        <div class="tab-pane fade" id="file-content">
+            <div class="file-upload-area p-4 text-center mb-3">
+                <i class="bi bi-cloud-upload fs-2 mb-2"></i>
+                <h5>Kéo thả hoặc chọn tập tin</h5>
+                <p class="text-muted">Hỗ trợ PDF, DOCX, TXT</p>
+                <input type="file" class="form-control" id="aiFileInput" 
+                    accept=".pdf,.docx,.txt">
+            </div>
+            <button type="button" class="btn btn-primary" id="detectAIFile" disabled>
+                <i class="bi bi-search"></i> Kiểm tra
+            </button>
+        </div>
+    </div>
+</div>

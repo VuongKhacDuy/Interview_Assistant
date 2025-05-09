@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const cookieParser = require('cookie-parser');
+const aiDetectorRoutes = require('./routes/aiDetectorRoutes');
 
 // Custom environment config loader
 // Modify loadConfig function
@@ -82,3 +83,6 @@ async function startServer() {
 }
 
 startServer();
+
+// Thêm route cho AI Detector
+app.use('/api', aiDetectorRoutes);
