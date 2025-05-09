@@ -34,3 +34,24 @@ exports.solveProblem = async (req, res) => {
         res.status(500).json({ error: 'Failed to solve problem.' });
     }
 };
+
+exports.analyzeAlternativeSolution = async (req, res) => {
+    try {
+        const apiKey = req.cookies?.apiKey;
+        if (!apiKey) {
+            return res.status(400).json({ error: 'API key is required.' });
+        }
+
+        const { problem, language, outputLanguage, alternativeSolution } = req.body;
+        if (!problem || !alternativeSolution) {
+            return res.status(400).json({ error: 'Problem and alternative solution are required.' });
+        }
+
+        const aiService = new AIService(apiKey);
+        const analysis = await aiService.analyzeAlternativeSolution(problem, alternativeSolution, language, outputLanguage);
+        res.json({ analysis });
+    } catch (error) {
+        console.error('Error analyzing solution:', error);
+        res.status(500).json({ error: 'Failed to analyze solution.' });
+    }
+};

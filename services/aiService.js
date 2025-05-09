@@ -560,53 +560,71 @@ async generateOptimizedCV(cvContent, jdText) {
     }
 }
 
-async solveAlgorithm(problem, language, outputLanguage) {
-    const languageMap = {
-        'vi': 'Vietnamese',
-        'en': 'English'
-    };
+    async solveAlgorithm(problem, language, outputLanguage) {
+        const languageMap = {
+            'vi': 'Vietnamese',
+            'en': 'English'
+        };
 
-    const prompt = `As an expert programmer, analyze and solve this algorithm problem.
-Please provide the explanation in ${languageMap[outputLanguage] || 'Vietnamese'}.
+        const prompt = `As an expert programmer, analyze and solve this algorithm problem.
+        Please provide the explanation in ${languageMap[outputLanguage] || 'Vietnamese'}.
 
-Problem: ${problem}
+        Problem: ${problem}
 
-Please provide a comprehensive solution in ${language} with:
-1. Problem Analysis
-   - Understanding of the problem
-   - Input/Output examples
-   - Edge cases to consider
+        Please provide a comprehensive solution in ${language} with:
+        1. Problem Analysis
+        - Understanding of the problem
+        - Input/Output examples
+        - Edge cases to consider
 
-2. Solution Approach
-   - Algorithm explanation
-   - Time and Space complexity analysis
-   - Key considerations
+        2. Solution Approach
+        - Algorithm explanation
+        - Time and Space complexity analysis
+        - Key considerations
 
-3. Implementation
-   - Well-commented code in ${language}
-   - Explanation of key steps
-   - Test cases
+        3. Implementation
+        - Well-commented code in ${language}
+        - Explanation of key steps
+        - Test cases
 
-4. Alternative Approaches (if applicable)
-   - Other possible solutions
-   - Trade-offs between approaches
+        4. Alternative Approaches (if applicable)
+        - Other possible solutions
+        - Trade-offs between approaches
 
-Format your response in markdown with clear sections and code blocks.
-All explanations should be in ${languageMap[outputLanguage] || 'Vietnamese'}, but keep code and technical terms in English.`;
+        Format your response in markdown with clear sections and code blocks.
+        All explanations should be in ${languageMap[outputLanguage] || 'Vietnamese'}, but keep code and technical terms in English.`;
 
-    try {
-        const result = await this.model.generateContent(prompt);
-        const solution = result?.response?.candidates?.[0]?.content?.parts?.map(part => part.text).join('') || 'Could not generate solution.';
-        return marked(solution); // Convert markdown to HTML
-    } catch (error) {
-        console.error('Error solving algorithm:', error);
-        throw new Error('Failed to solve algorithm problem');
+        try {
+            const result = await this.model.generateContent(prompt);
+            const solution = result?.response?.candidates?.[0]?.content?.parts?.map(part => part.text).join('') || 'Could not generate solution.';
+            return marked(solution); // Convert markdown to HTML
+        } catch (error) {
+            console.error('Error solving algorithm:', error);
+            throw new Error('Failed to solve algorithm problem');
+        }
     }
-}
-    async translateImageText(text, targetLanguage, contentType = 'text') {
-        console.log('1 >>>>>>>>>>>> Text:', text);
-        console.log('1 >>>>>>>>>>>> targetLanguage:', targetLanguage);
 
+    async analyzeAlternativeSolution(problem, alternativeSolution, language, outputLanguage) {
+        const prompt = `Analyze the following alternative solution for the given programming problem.
+
+        Problem:
+        ${problem}
+
+        Alternative Solution:
+        ${alternativeSolution}
+
+        Please provide:
+        1. Code analysis and review
+        2. Time and space complexity analysis
+        3. Comparison with common solutions
+        4. Potential optimizations
+        5. Edge cases and limitations
+
+        Response language: ${outputLanguage}`;
+
+        return await this.generateContent(prompt);
+    }
+    async translateImageText(text, targetLanguage, contentType = 'text') {
         const prompt = `Translate this ${text} to ${targetLanguage}. 
         IMPORTANT:
         - Translate ONLY the exact text provided
