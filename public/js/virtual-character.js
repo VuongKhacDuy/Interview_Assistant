@@ -397,7 +397,7 @@ function stopAllSpeech() {
     }
     
     // Dừng animation
-    stopTalkingAnimation();
+            stopTalkingAnimation();
     isSpeaking = false;
     isPaused = false;
     
@@ -422,7 +422,7 @@ function pauseSpeech() {
             
             speechSynthesis.pause();
             console.log("Đã tạm dừng Web Speech API");
-        } catch (error) {
+    } catch (error) {
             console.error("Lỗi khi tạm dừng Web Speech API:", error);
         }
     }
@@ -434,7 +434,7 @@ function pauseSpeech() {
     }
     
     // Tạm dừng animation
-    stopTalkingAnimation();
+        stopTalkingAnimation();
     isPaused = true;
     
     // Cập nhật trạng thái các nút
