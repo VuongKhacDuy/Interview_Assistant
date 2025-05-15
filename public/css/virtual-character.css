@@ -93,30 +93,69 @@
 #chat-messages .message {
     margin-bottom: 15px;
     animation: fadeIn 0.3s ease;
+    clear: both;
+    width: 100%;
+    overflow: visible;
+    display: block;
+    position: relative;
 }
 
 #chat-messages .message.user {
     text-align: right;
+    float: right;
+}
+
+#chat-messages .message.robot {
+    text-align: left;
+    float: left;
 }
 
 #chat-messages .message .content {
     display: inline-block;
-    padding: 8px 12px;
+    padding: 10px 15px;
     border-radius: 18px;
     max-width: 85%;
     word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Cải thiện định dạng danh sách trong tin nhắn */
+#chat-messages .message .content ul,
+#chat-messages .message .content ol {
+    text-align: left;
+    padding-left: 25px;
+    margin-bottom: 8px;
+    margin-top: 8px;
+    width: auto;
+    list-style-position: outside;
+}
+
+#chat-messages .message .content li {
+    margin-bottom: 5px;
+    margin-left: 5px;
+    padding-left: 3px;
+}
+
+#chat-messages .message .content p {
+    margin-bottom: 8px;
+}
+
+#chat-messages .message .content p:last-child {
+    margin-bottom: 0;
 }
 
 #chat-messages .message.user .content {
     background-color: #e3f2fd;
     color: #0d47a1;
     border-top-right-radius: 0;
+    text-align: left;
 }
 
 #chat-messages .message.robot .content {
     background-color: #f5f5f5;
     color: #212121;
     border-top-left-radius: 0;
+    text-align: left;
 }
 
 @keyframes fadeIn {

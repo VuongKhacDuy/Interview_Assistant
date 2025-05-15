@@ -637,20 +637,50 @@ function addMessageToChat(sender, message, isError = false) {
     const contentElement = document.createElement('div');
     contentElement.className = 'content';
     
+    // Đảm bảo tin nhắn hiển thị đúng trước khi thêm vào DOM
+    const formattedMessage = message.trim();
+    
     if (isError) {
         contentElement.classList.add('error');
-        contentElement.innerHTML = message;
+        contentElement.innerHTML = formattedMessage;
     } else if (sender === 'System') {
         // Xử lý đặc biệt cho tin nhắn hệ thống
         contentElement.classList.add('system-message');
-        contentElement.innerHTML = message;
+        contentElement.innerHTML = formattedMessage;
         messageElement.classList.add('system');
     } else {
-        contentElement.innerHTML = message;
+        // Xử lý tin nhắn thông thường
+        contentElement.innerHTML = formattedMessage;
+        
+        // Fix lỗi hiển thị danh sách - đảm bảo các thẻ list hiển thị đúng
+        const lists = contentElement.querySelectorAll('ul, ol');
+        lists.forEach(list => {
+            list.style.paddingLeft = '25px';
+            list.style.listStylePosition = 'outside';
+            list.style.marginTop = '5px';
+            list.style.marginBottom = '5px';
+            
+            const items = list.querySelectorAll('li');
+            items.forEach(item => {
+                item.style.display = 'list-item';
+                item.style.marginBottom = '5px';
+                item.style.marginLeft = '5px';
+                item.style.paddingLeft = '3px';
+            });
+        });
     }
     
     messageElement.appendChild(contentElement);
+    
+    // Thêm vào chat và scroll xuống
     chatMessages.appendChild(messageElement);
+    
+    // Fix lỗi đè lên nhau bằng cách thêm clearfix sau mỗi tin nhắn
+    const clearFix = document.createElement('div');
+    clearFix.className = 'clearfix';
+    chatMessages.appendChild(clearFix);
+    
+    // Scroll xuống tin nhắn mới nhất
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
@@ -666,9 +696,17 @@ async function sendMessage() {
     addMessageToChat('User', message);
     userInput.value = '';
 
-    startTalkingAnimation();
-    isSpeaking = true;
-    updateSpeechControlButtonsState();
+    // Tạo một placeholder cho tin nhắn robot với animation "đang soạn văn bản"
+    const robotMessageElement = document.createElement('div');
+    robotMessageElement.className = 'message robot';
+    
+    const contentElement = document.createElement('div');
+    contentElement.className = 'content typing-animation';
+    contentElement.innerHTML = '<div class="dot-flashing"></div>';
+    
+    robotMessageElement.appendChild(contentElement);
+    chatMessages.appendChild(robotMessageElement);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
 
     try {
         const response = await fetch('/virtual-character/generate-response', {
@@ -684,26 +722,170 @@ async function sendMessage() {
             throw new Error(data.error);
         }
 
-        // Thêm tin nhắn robot với giao diện đẹp hơn
-        addMessageToChat('Robot', data.response);
-        
-        // Kiểm tra nếu người dùng đã dừng trong khi chờ phản hồi
-        if (!isSpeaking) {
-            return;
-        }
-        
         // Đảm bảo voice selection nhất quán trước khi phát âm thanh
         if (useWebSpeech.checked) {
             ensureConsistentVoiceSelection();
         }
         
-        console.log("Phát âm thanh cho phản hồi với phương thức: " + 
+        // Lưu nội dung phản hồi để sử dụng sau
+        const responseText = data.response;
+        
+        console.log("Chuẩn bị phát âm thanh với phương thức: " + 
                   (useWebSpeech.checked ? "Web Speech API" : "Server TTS"));
         
-        // Luôn sử dụng streamingTTS để đảm bảo đồng nhất giữa các phương thức
-        streamingTTS(data.response);
+        // Xử lý phát âm và hiển thị text đồng thời
+        if (useWebSpeech.checked) {
+            // Sử dụng Web Speech API
+            const cleanText = stripHtml(responseText);
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            
+            // Thiết lập voice và các thông số
+            const voices = speechSynthesis.getVoices();
+            if (voiceSelect.value) {
+                const selectedVoiceIndex = parseInt(voiceSelect.value);
+                if (!isNaN(selectedVoiceIndex) && selectedVoiceIndex >= 0 && selectedVoiceIndex < voices.length) {
+                    utterance.voice = voices[selectedVoiceIndex];
+                    utterance.lang = utterance.voice.lang;
+                }
+            }
+            
+            utterance.rate = parseFloat(rateRange.value);
+            utterance.pitch = parseFloat(pitchRange.value);
+            utterance.volume = 1.0;
+            
+            // Lưu utterance hiện tại để có thể pause/resume
+            speechUtterance = utterance;
+            
+            // Bắt đầu animation nói
+            startTalkingAnimation();
+            isSpeaking = true;
+            updateSpeechControlButtonsState();
+            
+            // Đặt sự kiện để hiển thị text khi bắt đầu phát âm thanh
+            utterance.onstart = () => {
+                // Thay thế animation "đang soạn" bằng nội dung thực
+                robotMessageElement.remove();
+                addMessageToChat('Robot', responseText);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            };
+            
+            utterance.onend = () => {
+                stopTalkingAnimation();
+                isSpeaking = false;
+                isPaused = false;
+                updateSpeechControlButtonsState();
+            };
+            
+            // Đảm bảo hủy các speech trước đó
+            speechSynthesis.cancel();
+            
+            // Khởi động watchdog cho Chrome nếu cần
+            if (window.chrome) {
+                if (window.speechSynthesisWatchdog) {
+                    clearInterval(window.speechSynthesisWatchdog);
+                }
+                
+                window.speechSynthesisWatchdog = setInterval(() => {
+                    if (speechSynthesis.speaking && !speechSynthesis.paused) {
+                        console.log("Chrome watchdog: giữ cho speech hoạt động");
+                        speechSynthesis.pause();
+                        setTimeout(() => {
+                            speechSynthesis.resume();
+                        }, 50);
+                    }
+                }, 5000);
+            }
+            
+            // Phát âm thanh
+            speechSynthesis.speak(utterance);
+        } else {
+            // Sử dụng Server TTS
+            try {
+                const cleanText = stripHtml(responseText);
+                
+                // Bắt đầu animation nói
+                startTalkingAnimation();
+                isSpeaking = true;
+                updateSpeechControlButtonsState();
+                
+                console.log(`Yêu cầu TTS từ server cho text: "${cleanText}", model: ${selectedServerModel}`);
+                const response = await fetch('/virtual-character/tts/synthesize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        text: cleanText,
+                        modelId: selectedServerModel
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('TTS request failed');
+                }
+                
+                const audioBlob = await response.blob();
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const audio = new Audio(audioUrl);
+                currentAudio = audio;
+                
+                // Hiển thị text khi audio đã sẵn sàng phát
+                audio.onloadeddata = () => {
+                    robotMessageElement.remove();
+                    addMessageToChat('Robot', responseText);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    
+                    // Phát audio
+                    audio.play();
+                };
+                
+                audio.onended = () => {
+                    URL.revokeObjectURL(audioUrl);
+                    currentAudio = null;
+                    stopTalkingAnimation();
+                    isSpeaking = false;
+                    isPaused = false;
+                    updateSpeechControlButtonsState();
+                };
+                
+                audio.onerror = (error) => {
+                    URL.revokeObjectURL(audioUrl);
+                    currentAudio = null;
+                    console.error('Audio playback error:', error);
+                    
+                    // Nếu lỗi phát audio, vẫn hiển thị text
+                    robotMessageElement.remove();
+                    addMessageToChat('Robot', responseText);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    
+                    stopTalkingAnimation();
+                    isSpeaking = false;
+                    isPaused = false;
+                    updateSpeechControlButtonsState();
+                };
+                
+                // Bắt đầu tải audio
+                audio.load();
+            } catch (error) {
+                console.error('Server TTS Error:', error);
+                
+                // Nếu lỗi server TTS, vẫn hiển thị text
+                robotMessageElement.remove();
+                addMessageToChat('Robot', responseText);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                stopTalkingAnimation();
+                isSpeaking = false;
+                isPaused = false;
+                updateSpeechControlButtonsState();
+            }
+        }
     } catch (error) {
         console.error('Error:', error);
+        
+        // Xóa animation "đang soạn"
+        robotMessageElement.remove();
+        
         // Hiển thị thông báo lỗi
         addMessageToChat('Robot', 'Xin lỗi, đã có lỗi xảy ra.', true);
         stopTalkingAnimation();
@@ -1030,40 +1212,27 @@ async function sendStreamMessage() {
     addMessageToChat('User', message);
     userInput.value = '';
     
-    // Tạo container cho response
+    // Tạo placeholder với animation "đang soạn văn bản"
     const robotMessageElement = document.createElement('div');
     robotMessageElement.className = 'message robot';
     
     const contentElement = document.createElement('div');
-    contentElement.className = 'content';
-    contentElement.id = 'streaming-response-container';
+    contentElement.className = 'content typing-animation';
+    contentElement.innerHTML = '<div class="dot-flashing"></div>';
     
-    const streamingResponseSpan = document.createElement('span');
-    streamingResponseSpan.id = 'streaming-response';
-    
-    contentElement.appendChild(streamingResponseSpan);
     robotMessageElement.appendChild(contentElement);
     chatMessages.appendChild(robotMessageElement);
-    
-    // Start animation
-    startTalkingAnimation();
-    isSpeaking = true;
-    updateSpeechControlButtonsState();
+    chatMessages.scrollTop = chatMessages.scrollHeight;
     
     try {
         const eventSource = new EventSource(`/virtual-character/generate-stream-response?message=${encodeURIComponent(message)}`);
         
         let fullResponse = '';
         let currentSentence = '';
+        let firstChunkReceived = false;
         
         // Xử lý từng chunk dữ liệu
         eventSource.onmessage = async function(event) {
-            // Kiểm tra nếu đã dừng bởi người dùng
-            if (!isSpeaking) {
-                eventSource.close();
-                return;
-            }
-            
             if (event.data === '[DONE]') {
                 eventSource.close();
                 if (isSpeaking) {
@@ -1082,12 +1251,52 @@ async function sendStreamMessage() {
                 }
                 
                 if (data.chunk) {
-                    fullResponse += data.chunk;
-                    currentSentence += data.chunk;
-                    
-                    // Cập nhật nội dung hiển thị
-                    streamingResponseSpan.textContent = fullResponse;
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    // Khi nhận được chunk đầu tiên
+                    if (!firstChunkReceived) {
+                        firstChunkReceived = true;
+                        
+                        // Xóa animation "đang soạn" và thay thế bằng container cho nội dung
+                        robotMessageElement.remove();
+                        
+                        // Tạo container mới cho streaming response
+                        const newMessageElement = document.createElement('div');
+                        newMessageElement.className = 'message robot';
+                        
+                        const newContentElement = document.createElement('div');
+                        newContentElement.className = 'content';
+                        newContentElement.id = 'streaming-response-container';
+                        
+                        const streamingResponseSpan = document.createElement('span');
+                        streamingResponseSpan.id = 'streaming-response';
+                        streamingResponseSpan.textContent = data.chunk;
+                        
+                        newContentElement.appendChild(streamingResponseSpan);
+                        newMessageElement.appendChild(newContentElement);
+                        chatMessages.appendChild(newMessageElement);
+                        
+                        // Add clearfix after the message to prevent layout issues
+                        const clearFix = document.createElement('div');
+                        clearFix.className = 'clearfix';
+                        chatMessages.appendChild(clearFix);
+                        
+                        // Bắt đầu animation nói và cập nhật trạng thái
+                        startTalkingAnimation();
+                        isSpeaking = true;
+                        updateSpeechControlButtonsState();
+                        
+                        fullResponse = data.chunk;
+                        currentSentence = data.chunk;
+                    } else {
+                        // Cập nhật nội dung hiển thị với chunk mới
+                        fullResponse += data.chunk;
+                        currentSentence += data.chunk;
+                        
+                        const streamingResponseSpan = document.getElementById('streaming-response');
+                        if (streamingResponseSpan) {
+                            streamingResponseSpan.textContent = fullResponse;
+                            chatMessages.scrollTop = chatMessages.scrollHeight;
+                        }
+                    }
                     
                     // Kiểm tra nếu đã dừng bởi người dùng
                     if (!isSpeaking) {
@@ -1129,21 +1338,31 @@ async function sendStreamMessage() {
             console.error('EventSource error:', error);
             eventSource.close();
             
-            if (isSpeaking) {
+            // Nếu chưa nhận được chunk nào, hiển thị thông báo lỗi
+            if (!firstChunkReceived) {
+                robotMessageElement.remove();
+                addMessageToChat('Robot', 'Đã xảy ra lỗi kết nối. Vui lòng thử lại sau.', true);
+            } else if (isSpeaking) {
                 stopTalkingAnimation();
                 isSpeaking = false;
                 updateSpeechControlButtonsState();
+                
+                // Hiển thị thông báo lỗi kết nối
+                const streamingResponseSpan = document.getElementById('streaming-response');
+                if (streamingResponseSpan) {
+                    const errorElement = document.createElement('span');
+                    errorElement.className = 'text-danger';
+                    errorElement.textContent = ' [Lỗi kết nối]';
+                    streamingResponseSpan.appendChild(errorElement);
+                }
             }
-            
-            // Hiển thị thông báo lỗi kết nối
-            const errorElement = document.createElement('span');
-            errorElement.className = 'text-danger';
-            errorElement.textContent = ' [Lỗi kết nối]';
-            streamingResponseSpan.appendChild(errorElement);
         };
         
     } catch (error) {
         console.error('Error:', error);
+        // Xóa animation "đang soạn"
+        robotMessageElement.remove();
+        
         // Hiển thị thông báo lỗi
         addMessageToChat('Robot', 'Xin lỗi, đã có lỗi xảy ra.', true);
         
@@ -1404,6 +1623,63 @@ combinedSelectStyle.textContent = `
     }
 `;
 document.head.appendChild(combinedSelectStyle);
+
+// Thêm CSS cho cải thiện hiển thị chat messages
+const chatMessageStyle = document.createElement('style');
+chatMessageStyle.textContent = `
+    /* Fix hiển thị chat messages */
+    #chat-messages .message {
+        width: 100%;
+        float: none;
+        clear: both;
+        overflow: visible;
+        margin-bottom: 15px;
+    }
+    
+    #chat-messages .message.user {
+        float: right;
+        text-align: right;
+    }
+    
+    #chat-messages .message.robot {
+        float: left;
+        text-align: left;
+    }
+    
+    #chat-messages .message .content {
+        display: inline-block;
+        max-width: 85%;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+    
+    /* Cải thiện hiển thị danh sách */
+    #chat-messages .message .content ul,
+    #chat-messages .message .content ol {
+        text-align: left;
+        padding-left: 25px !important;
+        margin-top: 8px !important;
+        margin-bottom: 8px !important;
+        list-style-position: outside !important;
+    }
+    
+    #chat-messages .message .content li {
+        display: list-item !important;
+        margin-bottom: 5px !important;
+        margin-left: 5px !important;
+        padding-left: 3px !important;
+    }
+    
+    /* Đảm bảo clearfix hoạt động đúng */
+    #chat-messages .clearfix {
+        clear: both;
+        height: 1px;
+        width: 100%;
+        display: block;
+        visibility: hidden;
+    }
+`;
+document.head.appendChild(chatMessageStyle);
 
 // Khi trang tải xong, cập nhật trạng thái combined select
 window.addEventListener('DOMContentLoaded', function() {

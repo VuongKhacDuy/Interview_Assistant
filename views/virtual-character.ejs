@@ -7,6 +7,145 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="/css/virtual-character.css" rel="stylesheet">
+    <style>
+        /* CSS cho animation ba chấm */
+        .typing-animation {
+            background-color: #f0f0f0 !important;
+            padding: 10px 15px;
+            border-radius: 18px;
+            border-top-left-radius: 0;
+            min-width: 50px;
+        }
+        
+        .dot-flashing {
+            position: relative;
+            width: 6px;
+            height: 6px;
+            background-color: #888;
+            border-radius: 50%;
+            animation: dot-flashing 1s infinite linear alternate;
+            animation-delay: 0.5s;
+            margin-right: 2px;
+        }
+        
+        .dot-flashing::before, .dot-flashing::after {
+            content: "";
+            display: inline-block;
+            position: absolute;
+            top: 0;
+        }
+        
+        .dot-flashing::before {
+            left: -10px;
+            width: 6px;
+            height: 6px;
+            background-color: #888;
+            border-radius: 50%;
+            animation: dot-flashing 1s infinite alternate;
+            animation-delay: 0s;
+        }
+        
+        .dot-flashing::after {
+            left: 10px;
+            width: 6px;
+            height: 6px;
+            background-color: #888;
+            border-radius: 50%;
+            animation: dot-flashing 1s infinite alternate;
+            animation-delay: 1s;
+        }
+        
+        @keyframes dot-flashing {
+            0% { background-color: #888; }
+            50%, 100% { background-color: #ccc; }
+        }
+        
+        /* Sửa lỗi layout và hiển thị nội dung */
+        #chat-messages .message .content ul,
+        #chat-messages .message .content ol {
+            padding-left: 25px;
+            margin-top: 5px;
+            margin-bottom: 5px;
+            list-style-position: outside;
+        }
+        
+        #chat-messages .message .content li {
+            margin-bottom: 5px;
+            display: list-item;
+            margin-left: 5px;
+            padding-left: 3px;
+        }
+        
+        #chat-messages .message .content ul li {
+            list-style-type: disc;
+        }
+        
+        #chat-messages .message .content ol li {
+            list-style-type: decimal;
+        }
+        
+        /* Điều chỉnh khoảng cách và hiển thị */
+        #chat-messages:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+        
+        /* Đảm bảo các tin nhắn có margin dưới */
+        #chat-messages .message:last-child {
+            margin-bottom: 10px;
+        }
+        
+        /* Fix hiển thị full nội dung tin nhắn */
+        #chat-messages .message {
+            width: 100%;
+            display: block;
+            margin-bottom: 15px;
+            clear: both;
+        }
+        
+        #chat-messages .message.user {
+            float: right;
+            text-align: right;
+        }
+        
+        #chat-messages .message.robot {
+            float: left;
+            text-align: left;
+        }
+        
+        #chat-messages .message .content {
+            display: inline-block;
+            max-width: 85%;
+            word-wrap: break-word;
+            padding: 10px 15px;
+            border-radius: 18px;
+            overflow-wrap: break-word;
+        }
+        
+        /* Thêm clearfix sau mỗi tin nhắn */
+        #chat-messages .clearfix {
+            clear: both;
+            height: 1px;
+            display: block;
+            width: 100%;
+            visibility: hidden;
+        }
+        
+        /* Đảm bảo nội dung dài vẫn hiển thị đầy đủ */
+        #chat-messages .content > * {
+            max-width: 100%;
+            overflow-wrap: break-word;
+        }
+        
+        /* Đảm bảo danh sách hiển thị đúng */
+        #chat-messages .content ul, 
+        #chat-messages .content ol {
+            width: 100%;
+            display: inline-block;
+            box-sizing: border-box;
+        }
+    </style>
 </head>
 <body>
     <%- include('partials/header', { title: 'Virtual Character' }) %>
