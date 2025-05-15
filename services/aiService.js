@@ -38,6 +38,42 @@ class AIService {
     }
 
     /**
+     * Generate content in a streaming manner using the AI model
+     * @param {string} prompt - The prompt to send to the AI
+     * @returns {AsyncGenerator} Generator that yields chunks of text
+     */
+    async *generateContentStream(prompt) {
+        try {
+            // Sử dụng API streaming
+            const result = await this.model.generateContentStream(prompt);
+            
+            // Iterate through chunks as they come in
+            for await (const chunk of result.stream) {
+                const textChunk = chunk.text();
+                if (textChunk) {
+                    yield textChunk;
+                }
+            }
+        } catch (error) {
+            console.error('Streaming error:', error);
+            if (error.status === 503) {
+                // Retry logic
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                const retryResult = await this.model.generateContentStream(prompt);
+                for await (const chunk of retryResult.stream) {
+                    const textChunk = chunk.text();
+                    if (textChunk) {
+                        yield textChunk;
+                    }
+                }
+            } else {
+                yield `Error: ${error.message}`;
+            }
+        }
+    }
+
+    /**
      * Generate interview questions based on a job description
      * @param {string} jdText - Job description text
      * @param {string} targetLanguage - Target language for the response

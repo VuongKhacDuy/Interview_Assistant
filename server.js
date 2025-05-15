@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const cookieParser = require('cookie-parser');
+const virtualCharacterRoutes = require('./routes/virtualCharacterRoutes');
 
 // Custom environment config loader
 // Modify loadConfig function
@@ -67,6 +68,7 @@ async function startServer() {
     app.use('/', jobRoutes);
     app.use('/', algorithmRoutes);
     app.use('/', translateRoutes);
+    app.use('/virtual-character', virtualCharacterRoutes);
 
     // Find available port
     PORT = await findAvailablePort(PORT);
