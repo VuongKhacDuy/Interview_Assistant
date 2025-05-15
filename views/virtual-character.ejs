@@ -33,36 +33,54 @@
                             <h5>Cài đặt giọng nói</h5>
                         </div>
                         <div class="card-body">
-                            <ul class="nav nav-tabs" id="voiceTabs" role="tablist">
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link active" id="browser-tab" data-bs-toggle="tab" data-bs-target="#browser-tts" type="button" role="tab" aria-controls="browser-tts" aria-selected="true">Trình duyệt</button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link" id="server-tab" data-bs-toggle="tab" data-bs-target="#server-tts" type="button" role="tab" aria-controls="server-tts" aria-selected="false">Server</button>
-                                </li>
-                            </ul>
+                            <div style="display: none;">
+                                <ul class="nav nav-tabs" id="voiceTabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" id="browser-tab" data-bs-toggle="tab" data-bs-target="#browser-tts" type="button" role="tab" aria-controls="browser-tts" aria-selected="true">Trình duyệt</button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="server-tab" data-bs-toggle="tab" data-bs-target="#server-tts" type="button" role="tab" aria-controls="server-tts" aria-selected="false">Server</button>
+                                    </li>
+                                </ul>
+                            </div>
                             
-                            <div class="tab-content mt-3" id="voiceTabsContent">
-                                <div class="tab-pane fade show active" id="browser-tts" role="tabpanel" aria-labelledby="browser-tab">
-                                    <div class="mb-3">
-                                        <label for="voice-select" class="form-label">Giọng nói</label>
-                                        <select id="voice-select" class="form-select">
-                                            <option value="">Giọng mặc định</option>
+                            <div class="voice-options mb-3">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <label class="form-label fw-bold">Chọn giọng đọc</label>
+                                        <select id="combined-voice-select" class="form-select mb-2">
+                                            <option value="" disabled selected>Đang tải danh sách giọng đọc...</option>
+                                            <optgroup label="Giọng trình duyệt">
+                                                <!-- Giọng trình duyệt sẽ được thêm vào đây bằng JavaScript -->
+                                            </optgroup>
+                                            <optgroup label="Giọng server">
+                                                <!-- Giọng server sẽ được thêm vào đây bằng JavaScript -->
+                                            </optgroup>
                                         </select>
+                                        
+                                        <!-- Giữ các select cũ nhưng ẩn đi, để không phải sửa nhiều JS -->
+                                        <div style="display: none;">
+                                            <select id="voice-select" class="form-select">
+                                                <option value="">Đang tải...</option>
+                                            </select>
+                                            <select id="server-model-select" class="form-select">
+                                                <option value="">Đang tải...</option>
+                                            </select>
+                                        </div>
                                     </div>
+                                </div>
+                            </div>
+                            
+                            <div class="tab-content" id="voiceTabsContent" style="display: none;">
+                                <div class="tab-pane fade show active" id="browser-tts" role="tabpanel" aria-labelledby="browser-tab">
                                 </div>
                                 
                                 <div class="tab-pane fade" id="server-tts" role="tabpanel" aria-labelledby="server-tab">
-                                    <div class="mb-3">
-                                        <label for="server-model-select" class="form-label">Model tiếng Việt</label>
-                                        <select id="server-model-select" class="form-select">
-                                            <option value="">Đang tải...</option>
-                                        </select>
-                                    </div>
-                                    <div class="alert alert-warning mt-2" id="server-tts-warning" style="display: none;">
-                                        <strong>Lưu ý:</strong> Model TTS server hiện đang gặp sự cố. Hệ thống sẽ tự động chuyển sang sử dụng Web Speech API. Bạn có thể thử lại sau.
-                                    </div>
                                 </div>
+                            </div>
+                            
+                            <div class="alert alert-warning mt-2" id="server-tts-warning" style="display: none;">
+                                <strong>Lưu ý:</strong> Model TTS server hiện đang gặp sự cố. Hệ thống sẽ tự động chuyển sang sử dụng Web Speech API. Bạn có thể thử lại sau.
                             </div>
                             
                             <div class="mb-3">
@@ -75,10 +93,56 @@
                                 <input type="range" class="form-range" id="pitch-range" min="0.5" max="2" step="0.1" value="1">
                             </div>
                             
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="use-web-speech" checked>
-                                <label class="form-check-label" for="use-web-speech">Sử dụng Web Speech API (realtime)</label>
+                            <div class="form-check form-switch d-flex align-items-center">
+                                <input class="form-check-input me-2" type="checkbox" id="use-web-speech" checked>
+                                <label class="form-check-label" for="use-web-speech">Sử dụng giọng trình duyệt</label>
+                                <span class="ms-2 text-muted">(Bỏ chọn để sử dụng giọng server)</span>
                             </div>
+                            
+                            <div class="form-check form-switch d-flex align-items-center mt-2">
+                                <input class="form-check-input me-2" type="checkbox" id="force-vietnamese" checked>
+                                <label class="form-check-label" for="force-vietnamese">Bắt buộc tiếng Việt</label>
+                                <span class="ms-2 text-muted">(Bỏ chọn để dùng ngôn ngữ khác)</span>
+                            </div>
+                            
+                            <style>
+                                .voice-options .row {
+                                    margin-bottom: 15px;
+                                }
+                                .voice-options select {
+                                    transition: all 0.3s;
+                                }
+                                #voice-select.active-voice {
+                                    border-color: #198754;
+                                    box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+                                }
+                                #server-model-select.active-voice {
+                                    border-color: #198754;
+                                    box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+                                }
+                            </style>
+                            
+                            <script>
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    const useWebSpeech = document.getElementById('use-web-speech');
+                                    const voiceSelect = document.getElementById('voice-select');
+                                    const serverModelSelect = document.getElementById('server-model-select');
+                                    
+                                    function updateVoiceSelectHighlight() {
+                                        if (useWebSpeech.checked) {
+                                            voiceSelect.classList.add('active-voice');
+                                            serverModelSelect.classList.remove('active-voice');
+                                        } else {
+                                            voiceSelect.classList.remove('active-voice');
+                                            serverModelSelect.classList.add('active-voice');
+                                        }
+                                    }
+                                    
+                                    updateVoiceSelectHighlight();
+                                    
+                                    useWebSpeech.addEventListener('change', updateVoiceSelectHighlight);
+                                });
+                            </script>
                         </div>
                     </div>
                 </div>

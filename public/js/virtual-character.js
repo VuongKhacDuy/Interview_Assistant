@@ -3,6 +3,7 @@ const chatMessages = document.getElementById('chat-messages');
 const userInput = document.getElementById('user-input');
 const voiceSelect = document.getElementById('voice-select');
 const serverModelSelect = document.getElementById('server-model-select');
+const combinedVoiceSelect = document.getElementById('combined-voice-select');
 const rateRange = document.getElementById('rate-range');
 const pitchRange = document.getElementById('pitch-range');
 const rateValue = document.getElementById('rate-value');
@@ -46,11 +47,26 @@ async function loadServerModels() {
             serverModelSelect.appendChild(option);
         });
         
+        // Cập nhật combined select cho server models
+        const serverOptgroup = combinedVoiceSelect.querySelector('optgroup[label="Giọng server"]');
+        if (serverOptgroup) {
+            serverOptgroup.innerHTML = ''; // Xóa placeholders
+            models.forEach(model => {
+                const option = document.createElement('option');
+                option.value = 'server:' + model.id;
+                option.textContent = model.name;
+                option.dataset.isServer = 'true';
+                serverOptgroup.appendChild(option);
+            });
+        }
+        
         // Lưu model đã chọn
         if (models.length > 0) {
             selectedServerModel = models[0].id;
             showServerTtsWarning(false);
         }
+        
+        updateCombinedVoiceSelect();
     } catch (error) {
         console.error('Lỗi tải danh sách model:', error);
         serverModelSelect.innerHTML = '<option value="">Lỗi tải danh sách model</option>';
@@ -73,6 +89,17 @@ loadServerModels();
 // Cập nhật model khi thay đổi
 serverModelSelect.addEventListener('change', function() {
     selectedServerModel = this.value;
+    console.log(`Đã chọn model server: ${selectedServerModel}`);
+    
+    // Đồng bộ với combined select
+    if (this.value) {
+        combinedVoiceSelect.value = 'server:' + this.value;
+    }
+    
+    // Nếu đã chọn model server và đang không sử dụng Web Speech
+    if (selectedServerModel && !useWebSpeech.checked) {
+        console.log('Đã chọn giọng server, sẵn sàng sử dụng');
+    }
 });
 
 // Khi chuyển tab giữa browser và server
@@ -224,6 +251,7 @@ function populateVoiceList() {
     let foundVietnameseVoice = false;
     let viVoiceIndex = -1;
     
+    // Cập nhật select cũ
     voices.forEach((voice, index) => {
         const option = document.createElement('option');
         option.value = index;
@@ -246,27 +274,102 @@ function populateVoiceList() {
         voiceSelect.appendChild(option);
     });
     
+    // Cập nhật combined select cho browser voices
+    const browserOptgroup = combinedVoiceSelect.querySelector('optgroup[label="Giọng trình duyệt"]');
+    if (browserOptgroup) {
+        browserOptgroup.innerHTML = ''; // Xóa placeholders
+        voices.forEach((voice, index) => {
+            const option = document.createElement('option');
+            option.value = 'browser:' + index;
+            
+            // Đánh dấu nếu là giọng tiếng Việt
+            const isVietnamese = voice.lang === 'vi-VN' || voice.lang === 'vi' || voice.lang.startsWith('vi-');
+            if (isVietnamese) {
+                option.textContent = `🇻🇳 ${voice.name} (${voice.lang})`;
+                option.dataset.isVietnamese = 'true';
+            } else {
+                option.textContent = `${voice.name} (${voice.lang})`;
+            }
+            
+            browserOptgroup.appendChild(option);
+        });
+    }
+    
     // Chọn giọng tiếng Việt đầu tiên nếu có
     if (foundVietnameseVoice && viVoiceIndex !== -1) {
         voiceSelect.value = viVoiceIndex;
         console.log(`Tự động chọn giọng tiếng Việt: ${voices[viVoiceIndex].name}`);
     }
     
-    // Hiển thị cảnh báo nếu không tìm thấy giọng tiếng Việt
-    if (!foundVietnameseVoice && viVoices.length === 0) {
-        console.warn('Không tìm thấy giọng tiếng Việt trong trình duyệt của bạn!');
-        
-        const voiceWarning = document.createElement('div');
-        voiceWarning.className = 'alert alert-warning mt-2 voice-warning';
-        voiceWarning.innerHTML = `
-            <strong>Cảnh báo:</strong> Không tìm thấy giọng tiếng Việt trong trình duyệt của bạn. 
-            Bạn có thể cài đặt thêm giọng tiếng Việt trong cài đặt hệ thống hoặc sử dụng TTS Server.
-        `;
-        
-        // Thêm cảnh báo vào sau select
-        voiceSelect.parentNode.appendChild(voiceWarning);
+    updateCombinedVoiceSelect();
+}
+
+// Cập nhật combined voice select dựa trên lựa chọn hiện tại
+function updateCombinedVoiceSelect() {
+    // Xác định giá trị đang được chọn
+    if (useWebSpeech.checked && voiceSelect.value) {
+        // Chọn browser voice tương ứng
+        combinedVoiceSelect.value = 'browser:' + voiceSelect.value;
+    } else if (!useWebSpeech.checked && selectedServerModel) {
+        // Chọn server voice tương ứng
+        combinedVoiceSelect.value = 'server:' + selectedServerModel;
     }
 }
+
+// Xử lý khi người dùng chọn giọng từ dropdown gộp
+combinedVoiceSelect.addEventListener('change', function() {
+    const selectedValue = this.value;
+    if (!selectedValue) return;
+    
+    if (selectedValue.startsWith('browser:')) {
+        // Chọn giọng trình duyệt
+        const browserVoiceIndex = selectedValue.split(':')[1];
+        voiceSelect.value = browserVoiceIndex;
+        
+        // Đánh dấu sử dụng Web Speech API
+        useWebSpeech.checked = true;
+        
+        // Kiểm tra xem giọng được chọn có phải tiếng Việt không
+        const voices = speechSynthesis.getVoices();
+        const selectedVoice = voices[parseInt(browserVoiceIndex)];
+        if (selectedVoice) {
+            const isVietnameseVoice = selectedVoice.lang === 'vi-VN' || 
+                                  selectedVoice.lang === 'vi' || 
+                                  selectedVoice.lang.startsWith('vi-');
+            
+            // Nếu không phải giọng tiếng Việt, tự động tắt "Bắt buộc tiếng Việt"
+            if (!isVietnameseVoice && forceVietnamese.checked) {
+                forceVietnamese.checked = false;
+                console.log("Đã tắt tự động bắt buộc tiếng Việt vì đã chọn giọng không phải tiếng Việt");
+            }
+            
+            console.log(`Đã chọn giọng trình duyệt: ${selectedVoice.name} (${selectedVoice.lang})`);
+        } else {
+            console.log(`Đã chọn giọng trình duyệt với index: ${browserVoiceIndex}`);
+        }
+    } else if (selectedValue.startsWith('server:')) {
+        // Chọn giọng server
+        const serverModelId = selectedValue.split(':')[1];
+        selectedServerModel = serverModelId;
+        serverModelSelect.value = serverModelId;
+        
+        // Đánh dấu sử dụng Server TTS
+        useWebSpeech.checked = false;
+        
+        console.log(`Đã chọn giọng server: ${serverModelId}`);
+    }
+    
+    // Kích hoạt sự kiện change cho các controls bị ảnh hưởng
+    if (useWebSpeech.checked) {
+        // Kích hoạt sự kiện change cho voice select
+        const event = new Event('change');
+        voiceSelect.dispatchEvent(event);
+    } else {
+        // Kích hoạt sự kiện change cho server model select
+        const event = new Event('change');
+        serverModelSelect.dispatchEvent(event);
+    }
+});
 
 // Cập nhật hàm dừng để làm sạch watchdog
 function stopAllSpeech() {
@@ -311,17 +414,17 @@ function pauseSpeech() {
     // Tạm dừng Web Speech API
     if (speechSynthesis.speaking) {
         try {
+            // Trước khi pause, tắt watchdog nếu có
+            if (window.speechSynthesisWatchdog) {
+                clearInterval(window.speechSynthesisWatchdog);
+                window.speechSynthesisWatchdog = null;
+            }
+            
             speechSynthesis.pause();
             console.log("Đã tạm dừng Web Speech API");
         } catch (error) {
             console.error("Lỗi khi tạm dừng Web Speech API:", error);
         }
-    }
-    
-    // Tạm dừng watchdog nếu có
-    if (window.speechSynthesisWatchdog) {
-        clearInterval(window.speechSynthesisWatchdog);
-        window.speechSynthesisWatchdog = null;
     }
     
     // Tạm dừng audio từ server nếu đang phát
@@ -344,34 +447,41 @@ function resumeSpeech() {
     
     console.log("Tiếp tục phát âm thanh");
     
-    // Khởi động lại watchdog
-    if (window.chrome && !window.speechSynthesisWatchdog && speechUtterance) {
-        window.speechSynthesisWatchdog = setInterval(() => {
-            if (speechSynthesis.speaking && !speechSynthesis.paused) {
-                console.log("Keeping speech alive after resume");
-                speechSynthesis.pause();
-                setTimeout(() => {
-                    speechSynthesis.resume();
-                }, 50);
-            }
-        }, 5000);
-    }
-    
     // Tiếp tục Web Speech API
-    try {
-        speechSynthesis.resume();
-        console.log("Đã tiếp tục Web Speech API");
-    } catch (error) {
-        console.error("Lỗi khi tiếp tục Web Speech API:", error);
-        
-        // Nếu không thể resume, thử lại với utterance hiện tại
-        if (speechUtterance && window.speechSynthesisUtteranceChunks?.length > 0) {
-            try {
-                speechSynthesis.cancel();
-                speechSynthesis.speak(window.speechSynthesisUtteranceChunks[0]);
-                console.log("Đã phát lại utterance sau khi không thể resume");
-            } catch (innerError) {
-                console.error("Không thể phát lại utterance:", innerError);
+    if (speechSynthesis.paused) {
+        try {
+            // Bắt đầu hoạt hình nói
+            startTalkingAnimation();
+            
+            // Khởi động lại watchdog cho Chrome
+            if (window.chrome && !window.speechSynthesisWatchdog) {
+                console.log("Khởi động lại watchdog cho Chrome");
+                window.speechSynthesisWatchdog = setInterval(() => {
+                    if (speechSynthesis.speaking && !speechSynthesis.paused) {
+                        console.log("Chrome watchdog: giữ cho speech hoạt động");
+                        speechSynthesis.pause();
+                        setTimeout(() => {
+                            speechSynthesis.resume();
+                        }, 50);
+                    }
+                }, 5000);
+            }
+            
+            // Resume speech
+            speechSynthesis.resume();
+            console.log("Đã tiếp tục Web Speech API");
+        } catch (error) {
+            console.error("Lỗi khi tiếp tục Web Speech API:", error);
+            
+            // Nếu không thể resume, thử phát lại từ đầu
+            if (speechUtterance) {
+                console.log("Thử phát lại utterance từ đầu");
+                try {
+                    speechSynthesis.cancel();
+                    speechSynthesis.speak(speechUtterance);
+                } catch (speakError) {
+                    console.error("Không thể phát lại utterance:", speakError);
+                }
             }
         }
     }
@@ -394,52 +504,9 @@ function resumeSpeech() {
     updateSpeechControlButtonsState();
 }
 
-// Cập nhật trạng thái các nút điều khiển
-function updateSpeechControlButtonsState() {
-    if (stopSpeechButton) {
-        if (isSpeaking) {
-            stopSpeechButton.classList.add('active');
-            stopSpeechButton.disabled = false;
-        } else {
-            stopSpeechButton.classList.remove('active');
-            stopSpeechButton.disabled = true;
-        }
-    }
-    
-    if (pauseSpeechButton) {
-        if (isSpeaking && !isPaused) {
-            pauseSpeechButton.disabled = false;
-            pauseSpeechButton.classList.add('active');
-        } else {
-            pauseSpeechButton.disabled = true;
-            pauseSpeechButton.classList.remove('active');
-        }
-    }
-    
-    if (playSpeechButton) {
-        if (isPaused) {
-            playSpeechButton.disabled = false;
-            playSpeechButton.classList.add('active');
-        } else {
-            playSpeechButton.disabled = true;
-            playSpeechButton.classList.remove('active');
-        }
-    }
-}
-
-// Tạo nút stop speech
-const stopSpeechButton = document.createElement('button');
-stopSpeechButton.className = 'btn btn-danger btn-control';
-stopSpeechButton.innerHTML = '<i class="fas fa-stop"></i>';
-stopSpeechButton.title = 'Dừng phát âm thanh';
-stopSpeechButton.disabled = true; // Mặc định không có gì để dừng
-stopSpeechButton.onclick = function() {
-    stopAllSpeech();
-};
-
 // Tạo nút pause speech
 const pauseSpeechButton = document.createElement('button');
-pauseSpeechButton.className = 'btn btn-warning btn-control';
+pauseSpeechButton.className = 'btn btn-warning btn-sm me-2';
 pauseSpeechButton.innerHTML = '<i class="fas fa-pause"></i>';
 pauseSpeechButton.title = 'Tạm dừng phát âm thanh';
 pauseSpeechButton.disabled = true; // Mặc định không có gì để tạm dừng
@@ -447,60 +514,47 @@ pauseSpeechButton.onclick = function() {
     pauseSpeech();
 };
 
-// Tạo nút play speech
-const playSpeechButton = document.createElement('button');
-playSpeechButton.className = 'btn btn-success btn-control';
-playSpeechButton.innerHTML = '<i class="fas fa-play"></i>';
-playSpeechButton.title = 'Tiếp tục phát âm thanh';
-playSpeechButton.disabled = true; // Mặc định không có gì để tiếp tục
-playSpeechButton.onclick = function() {
+// Tạo nút resume speech
+const resumeSpeechButton = document.createElement('button');
+resumeSpeechButton.className = 'btn btn-success btn-sm me-2';
+resumeSpeechButton.innerHTML = '<i class="fas fa-play"></i>';
+resumeSpeechButton.title = 'Tiếp tục phát âm thanh';
+resumeSpeechButton.disabled = true; // Mặc định không có gì để tiếp tục
+resumeSpeechButton.onclick = function() {
     resumeSpeech();
+};
+
+// Tạo nút stop speech
+const stopSpeechButton = document.createElement('button');
+stopSpeechButton.className = 'btn btn-danger btn-sm me-2';
+stopSpeechButton.innerHTML = '<i class="fas fa-stop"></i>';
+stopSpeechButton.title = 'Dừng phát âm thanh';
+stopSpeechButton.disabled = true; // Mặc định không có gì để dừng
+stopSpeechButton.onclick = function() {
+    stopAllSpeech();
 };
 
 // Tạo container cho các nút điều khiển
 const speechControlsContainer = document.createElement('div');
-speechControlsContainer.className = 'speech-controls-container mt-2 d-flex gap-2';
-speechControlsContainer.appendChild(playSpeechButton);
+speechControlsContainer.className = 'speech-controls mt-3 d-flex justify-content-center';
+speechControlsContainer.appendChild(resumeSpeechButton);
 speechControlsContainer.appendChild(pauseSpeechButton);
 speechControlsContainer.appendChild(stopSpeechButton);
 
-// Thêm style cho container
-const speechControlsStyle = document.createElement('style');
-speechControlsStyle.textContent = `
-    .speech-controls-container {
-        display: flex;
-        justify-content: center;
-    }
-    
-    .btn-control {
-        width: 40px;
-        height: 40px;
-        padding: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        margin: 0 5px;
-    }
-    
-    .btn-control.active {
-        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.5);
-    }
-    
-    @keyframes pulse-btn {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.1); }
-        100% { transform: scale(1); }
-    }
-    
-    .btn-control.active {
-        animation: pulse-btn 1.5s infinite;
-    }
-`;
-document.head.appendChild(speechControlsStyle);
-
 // Thêm container vào trang
 document.querySelector('.voice-controls .card-body').appendChild(speechControlsContainer);
+
+// Cập nhật trạng thái các nút điều khiển
+function updateSpeechControlButtonsState() {
+    // Nút dừng (stop)
+    stopSpeechButton.disabled = !isSpeaking;
+    
+    // Nút tạm dừng (pause)
+    pauseSpeechButton.disabled = !isSpeaking || isPaused;
+    
+    // Nút tiếp tục (resume/play)
+    resumeSpeechButton.disabled = !isPaused;
+}
 
 // Đảm bảo voices được tải đầy đủ
 if (speechSynthesis.onvoiceschanged !== undefined) {
@@ -533,7 +587,7 @@ function findAndSelectVietnameseVoice() {
         warning.className = 'alert alert-warning mt-2 voice-warning';
         warning.innerHTML = `
             <strong>Chú ý:</strong> Không tìm thấy giọng tiếng Việt. 
-            Hãy cài đặt thêm giọng trong cài đặt hệ thống hoặc sử dụng server TTS.
+            Hãy cài đặt thêm giọng trong cài đặt hệ thống hoặc sử dụng TTS Server.
         `;
         
         document.getElementById('browser-tts').appendChild(warning);
@@ -806,42 +860,53 @@ function speakWithBrowserTTS(text, callback) {
     // Loại bỏ HTML tags nếu có
     const cleanText = stripHtml(text);
     
-    // Đảm bảo dùng tiếng Việt
+    // Tạo utterance
     const utterance = new SpeechSynthesisUtterance(cleanText);
-    
-    // Set ngôn ngữ luôn là tiếng Việt trước
-    utterance.lang = 'vi-VN';
     
     // Lấy voice đã chọn
     const voices = speechSynthesis.getVoices();
     console.log(`Browser TTS: Danh sách giọng nói có sẵn: ${voices.length}`);
     
-    // Tìm và chọn giọng nói phù hợp
+    // Tìm và log các giọng tiếng Việt - vẫn hữu ích cho debug
+    const vietnameseVoices = voices.filter(voice => 
+        voice.lang === 'vi-VN' || voice.lang === 'vi' || voice.lang.startsWith('vi-')
+    );
+    console.log(`Browser TTS: Giọng tiếng Việt có sẵn: ${vietnameseVoices.length}`);
+    
+    // Ưu tiên giọng tiếng Việt
+    let voiceFound = false;
+    
+    // 1. Dùng voice đã được chọn từ dropdown bất kể ngôn ngữ gì
     if (voiceSelect.value) {
-        // Nếu người dùng đã chọn giọng nói, sử dụng giọng đó
-        const selectedVoice = voices[parseInt(voiceSelect.value)];
-        utterance.voice = selectedVoice;
-        console.log(`Browser TTS: Sử dụng giọng đã chọn: ${selectedVoice.name} (${selectedVoice.lang})`);
-    } else {
-        // Nếu chưa chọn, tìm giọng tiếng Việt
-        const vietnameseVoices = voices.filter(voice => 
-            voice.lang === 'vi-VN' || voice.lang === 'vi' || voice.lang.startsWith('vi-')
-        );
-        
-        if (vietnameseVoices.length > 0) {
-            utterance.voice = vietnameseVoices[0];
-            console.log(`Browser TTS: Sử dụng giọng tiếng Việt: ${utterance.voice.name}`);
-        } else {
-            console.log(`Browser TTS: Không tìm thấy giọng tiếng Việt, sử dụng mặc định`);
+        const selectedVoiceIndex = parseInt(voiceSelect.value);
+        if (!isNaN(selectedVoiceIndex) && selectedVoiceIndex >= 0 && selectedVoiceIndex < voices.length) {
+            const selectedVoice = voices[selectedVoiceIndex];
+            utterance.voice = selectedVoice;
+            
+            // Sử dụng ngôn ngữ của giọng được chọn
+            utterance.lang = selectedVoice.lang;
+            console.log(`Browser TTS: Sử dụng giọng đã chọn: ${selectedVoice.name} (${selectedVoice.lang})`);
+            voiceFound = true;
         }
+    } 
+    
+    // 2. Nếu không có chọn trên UI và bắt buộc tiếng Việt, tìm giọng tiếng Việt đầu tiên
+    if (!voiceFound && forceVietnamese.checked && vietnameseVoices.length > 0) {
+        utterance.voice = vietnameseVoices[0];
+        utterance.lang = vietnameseVoices[0].lang;
+        console.log(`Browser TTS: Sử dụng giọng tiếng Việt đầu tiên tìm được: ${utterance.voice.name}`);
+        voiceFound = true;
+    } else if (!voiceFound) {
+        // Không có giọng được chọn, sử dụng giọng mặc định của trình duyệt
+        console.log(`Browser TTS: Không có giọng được chọn, sử dụng giọng mặc định`);
+        // Không cần đặt lang ở đây để trình duyệt tự chọn language mặc định
     }
     
-    // Thiết lập tốc độ và cao độ
-    utterance.rate = 1.0; // Tốc độ chuẩn
-    utterance.pitch = 1.0; // Cao độ chuẩn
-    utterance.volume = 1.0; // Âm lượng tối đa
+    // Cập nhật rate và pitch từ sliders
+    utterance.rate = parseFloat(rateRange.value);
+    utterance.pitch = parseFloat(pitchRange.value);
+    utterance.volume = 1.0; // Đảm bảo âm lượng tối đa
     
-    // Xử lý các sự kiện
     utterance.onend = () => {
         console.log('Browser TTS: Kết thúc phát âm thanh');
         if (callback) callback();
@@ -855,36 +920,31 @@ function speakWithBrowserTTS(text, callback) {
     // Lưu utterance hiện tại để có thể pause/resume
     speechUtterance = utterance;
     
-    console.log(`Browser TTS: Bắt đầu phát âm "${cleanText.substring(0, 50)}..." với giọng ${utterance.voice?.name || 'mặc định'}`);
+    console.log(`Browser TTS: Phát âm thanh với giọng: ${utterance.voice?.name || 'mặc định'}, ngôn ngữ: ${utterance.lang || 'mặc định'}, độ dài: ${cleanText.length} ký tự`);
     
-    // Đảm bảo cancel mọi speech trước đó
+    // Đảm bảo hủy các speech trước đó
     speechSynthesis.cancel();
     
-    // Ngăn chặn Chrome bug khi tạm dừng quá lâu
-    // https://bugs.chromium.org/p/chromium/issues/detail?id=679437
+    // Khởi động watchdog cho Chrome (giúp phát văn bản dài)
     if (window.chrome) {
-        window.speechSynthesisUtteranceChunks = [];
-        window.speechSynthesisUtteranceChunks.push(utterance);
-        
-        // Phát âm
-        speechSynthesis.speak(utterance);
-        
-        // Restart speech synthesis watchdog 
-        if (!window.speechSynthesisWatchdog) {
-            window.speechSynthesisWatchdog = setInterval(() => {
-                if (speechSynthesis.speaking && !speechSynthesis.paused) {
-                    console.log("Keeping speech alive");
-                    speechSynthesis.pause();
-                    setTimeout(() => {
-                        speechSynthesis.resume();
-                    }, 50);
-                }
-            }, 5000); // Kiểm tra mỗi 5 giây
+        // Khởi động watchdog để tránh Chrome tự động dừng sau 15 giây
+        if (window.speechSynthesisWatchdog) {
+            clearInterval(window.speechSynthesisWatchdog);
         }
-    } else {
-        // Các trình duyệt khác
-        speechSynthesis.speak(utterance);
+        
+        window.speechSynthesisWatchdog = setInterval(() => {
+            if (speechSynthesis.speaking && !speechSynthesis.paused) {
+                console.log("Chrome watchdog: giữ cho speech hoạt động");
+                speechSynthesis.pause();
+                setTimeout(() => {
+                    speechSynthesis.resume();
+                }, 50);
+            }
+        }, 5000);
     }
+    
+    // Phát âm thanh
+    speechSynthesis.speak(utterance);
 }
 
 async function fallbackServerTTS(text) {
@@ -1179,36 +1239,62 @@ function ensureConsistentVoiceSelection() {
     
     console.log(`Kiểm tra voice selection: Tìm thấy ${vietnameseVoices.length} giọng tiếng Việt`);
     
-    // Nếu đang bắt buộc tiếng Việt và đã chọn giọng không phải tiếng Việt, đổi sang giọng tiếng Việt
-    if (forceVietnamese.checked && voiceSelect.value) {
-        const selectedVoice = voices[parseInt(voiceSelect.value)];
-        const isVietnameseVoice = selectedVoice?.lang === 'vi-VN' || 
-                                selectedVoice?.lang === 'vi' || 
-                                selectedVoice?.lang?.startsWith('vi-');
+    // Chỉ thực hiện chuyển đổi giọng nếu bắt buộc tiếng Việt được bật
+    if (forceVietnamese.checked) {
+        console.log("Chế độ bắt buộc tiếng Việt đang bật");
         
-        if (!isVietnameseVoice && vietnameseVoices.length > 0) {
-            // Tìm index của giọng tiếng Việt đầu tiên trong danh sách
+        // Kiểm tra nếu đang chọn giọng không phải tiếng Việt
+        if (voiceSelect.value) {
+            const selectedVoice = voices[parseInt(voiceSelect.value)];
+            if (selectedVoice) {
+                const isVietnameseVoice = selectedVoice.lang === 'vi-VN' || 
+                                        selectedVoice.lang === 'vi' || 
+                                        selectedVoice.lang.startsWith('vi-');
+                
+                // Nếu không phải giọng tiếng Việt, tự động chuyển
+                if (!isVietnameseVoice && vietnameseVoices.length > 0) {
+                    // Tìm index của giọng tiếng Việt đầu tiên trong danh sách
+                    const firstVietnameseVoiceIndex = voices.findIndex(voice => 
+                        voice.lang === 'vi-VN' || voice.lang === 'vi' || voice.lang.startsWith('vi-')
+                    );
+                    
+                    if (firstVietnameseVoiceIndex !== -1) {
+                        voiceSelect.value = firstVietnameseVoiceIndex;
+                        console.log(`Đã tự động chuyển sang giọng tiếng Việt: ${voices[firstVietnameseVoiceIndex].name}`);
+                        
+                        // Đồng thời cập nhật combined select
+                        combinedVoiceSelect.value = 'browser:' + firstVietnameseVoiceIndex;
+                    }
+                }
+            }
+        } else if (vietnameseVoices.length > 0) {
+            // Nếu chưa chọn giọng nào và có giọng tiếng Việt, tự động chọn giọng tiếng Việt đầu tiên
             const firstVietnameseVoiceIndex = voices.findIndex(voice => 
                 voice.lang === 'vi-VN' || voice.lang === 'vi' || voice.lang.startsWith('vi-')
             );
             
             if (firstVietnameseVoiceIndex !== -1) {
                 voiceSelect.value = firstVietnameseVoiceIndex;
-                console.log(`Đã tự động chuyển sang giọng tiếng Việt: ${voices[firstVietnameseVoiceIndex].name}`);
+                console.log(`Đã tự động chọn giọng tiếng Việt: ${voices[firstVietnameseVoiceIndex].name}`);
+                
+                // Đồng thời cập nhật combined select
+                combinedVoiceSelect.value = 'browser:' + firstVietnameseVoiceIndex;
             }
         }
-    }
-    
-    // Hiển thị cảnh báo nếu không tìm thấy giọng tiếng Việt và đang bắt buộc tiếng Việt
-    if (vietnameseVoices.length === 0 && forceVietnamese.checked) {
-        const warning = document.createElement('div');
-        warning.className = 'alert alert-warning mt-2 voice-warning';
-        warning.innerHTML = `
-            <strong>Chú ý:</strong> Không tìm thấy giọng tiếng Việt mặc dù đã bật "Bắt buộc tiếng Việt". 
-            Hãy cài đặt thêm giọng trong cài đặt hệ thống hoặc sử dụng server TTS.
-        `;
         
-        document.getElementById('browser-tts').appendChild(warning);
+        // Hiển thị cảnh báo nếu không tìm thấy giọng tiếng Việt và đang bắt buộc tiếng Việt
+        if (vietnameseVoices.length === 0) {
+            const warning = document.createElement('div');
+            warning.className = 'alert alert-warning mt-2 voice-warning';
+            warning.innerHTML = `
+                <strong>Chú ý:</strong> Không tìm thấy giọng tiếng Việt mặc dù đã bật "Bắt buộc tiếng Việt". 
+                Hãy cài đặt thêm giọng trong cài đặt hệ thống hoặc sử dụng server TTS.
+            `;
+            
+            document.getElementById('browser-tts').appendChild(warning);
+        }
+    } else {
+        console.log("Chế độ bắt buộc tiếng Việt đang tắt, cho phép sử dụng bất kỳ giọng nào");
     }
     
     return vietnameseVoices.length > 0;
@@ -1260,124 +1346,103 @@ voiceSelect.addEventListener('change', function() {
 useWebSpeech.addEventListener('change', function() {
     console.log(`Chuyển đổi phương thức TTS: ${this.checked ? 'Web Speech API' : 'Server TTS'}`);
     
-    // Khi chuyển sang Web Speech API, kiểm tra lại việc chọn giọng nói
     if (this.checked) {
         ensureConsistentVoiceSelection();
     }
+    
+    // Cập nhật combined select sau khi thay đổi
+    updateCombinedVoiceSelect();
 });
 
-// Hàm debug helper để ghi log và hiển thị thông tin TTS
-function logTTSInfo(title, message) {
-    // Ghi log vào console
-    console.log(`[TTS Debug] ${title}: ${message}`);
-    
-    // Kiểm tra nếu có debug panel
-    let debugPanel = document.getElementById('tts-debug-panel');
-    
-    // Tạo panel nếu chưa có
-    if (!debugPanel && false) { // Tắt debug panel trong production
-        debugPanel = document.createElement('div');
-        debugPanel.id = 'tts-debug-panel';
-        debugPanel.className = 'card mt-3';
-        debugPanel.innerHTML = `
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h6 class="mb-0">TTS Debug Panel</h6>
-                <button class="btn btn-sm btn-outline-secondary" onclick="this.parentNode.parentNode.style.display='none'">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="card-body">
-                <div id="tts-debug-log" class="small" style="max-height: 200px; overflow-y: auto;"></div>
-            </div>
-        `;
-        
-        document.querySelector('.voice-controls').appendChild(debugPanel);
+// Thêm CSS cho tin nhắn system
+const systemMessageStyle = document.createElement('style');
+systemMessageStyle.textContent = `
+    .message.system {
+        margin: 10px 0;
+        width: 100%;
     }
     
-    // Thêm log vào panel
-    if (debugPanel) {
-        const logContainer = document.getElementById('tts-debug-log');
-        if (logContainer) {
-            const logEntry = document.createElement('div');
-            logEntry.className = 'log-entry mb-1';
-            logEntry.innerHTML = `<strong>${title}:</strong> ${message}`;
-            logContainer.appendChild(logEntry);
-            logContainer.scrollTop = logContainer.scrollHeight;
-        }
+    .message.system .content {
+        width: 100%;
+        max-width: 100%;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        border-left: 4px solid #17a2b8;
     }
-}
+    
+    .message.system .content pre {
+        max-height: 150px;
+        overflow-y: auto;
+        font-size: 0.85rem;
+    }
+`;
+document.head.appendChild(systemMessageStyle);
 
-// Hàm kiểm tra và log tất cả thông tin TTS
-function diagnoseTTS() {
-    // Kiểm tra Web Speech API
-    if ('speechSynthesis' in window) {
-        logTTSInfo('Web Speech API', 'Được hỗ trợ');
+// Thêm CSS cho select gộp
+const combinedSelectStyle = document.createElement('style');
+combinedSelectStyle.textContent = `
+    #combined-voice-select {
+        font-size: 15px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        border: 1px solid #ced4da;
+        transition: all 0.2s;
+    }
+    
+    #combined-voice-select:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    
+    #combined-voice-select optgroup {
+        font-weight: bold;
+        color: #495057;
+    }
+    
+    #combined-voice-select option {
+        padding: 6px 8px;
+    }
+`;
+document.head.appendChild(combinedSelectStyle);
+
+// Khi trang tải xong, cập nhật trạng thái combined select
+window.addEventListener('DOMContentLoaded', function() {
+    // Đảm bảo voices được tải đầy đủ trước khi cập nhật UI
+    setTimeout(() => {
+        // Đảm bảo cập nhật combined select sau khi voices đã load
+        updateCombinedVoiceSelect();
         
-        // Kiểm tra voices
-        const voices = speechSynthesis.getVoices();
-        logTTSInfo('Tổng số voices', voices.length);
-        
-        // Tìm và log giọng tiếng Việt
-        const viVoices = voices.filter(voice => 
-            voice.lang === 'vi-VN' || voice.lang === 'vi' || voice.lang.startsWith('vi-')
-        );
-        
-        logTTSInfo('Giọng tiếng Việt', viVoices.length > 0 ? 
-                   `Tìm thấy ${viVoices.length} giọng` : 'Không tìm thấy');
-        
-        // Kiểm tra giọng đã chọn
-        if (voiceSelect.value) {
-            const selectedVoice = voices[parseInt(voiceSelect.value)];
-            logTTSInfo('Giọng đã chọn', `${selectedVoice.name} (${selectedVoice.lang})`);
-            
-            // Kiểm tra xem có phải giọng tiếng Việt không
-            const isVietnameseVoice = selectedVoice.lang === 'vi-VN' || 
-                                     selectedVoice.lang === 'vi' || 
-                                     selectedVoice.lang.startsWith('vi-');
-            
-            logTTSInfo('Giọng tiếng Việt?', isVietnameseVoice ? 'Có' : 'Không');
+        // Kiểm tra nếu đang sử dụng Web Speech API
+        if (useWebSpeech.checked) {
+            // Nếu combined select có tùy chọn với data-isVietnamese="true", ưu tiên chọn tùy chọn đó
+            const vietnameseOptions = Array.from(combinedVoiceSelect.querySelectorAll('option[data-is-vietnamese="true"]'));
+            if (vietnameseOptions.length > 0) {
+                combinedVoiceSelect.value = vietnameseOptions[0].value;
+                
+                // Cập nhật lại các select khác theo giá trị đã chọn
+                if (combinedVoiceSelect.value.startsWith('browser:')) {
+                    const browserVoiceIndex = combinedVoiceSelect.value.split(':')[1];
+                    voiceSelect.value = browserVoiceIndex;
+                    
+                    // Kích hoạt sự kiện change cho voice select
+                    const event = new Event('change');
+                    voiceSelect.dispatchEvent(event);
+                }
+            } else if (voiceSelect.value) {
+                // Nếu không tìm thấy giọng Việt, nhưng đã có giọng được chọn trước đó
+                combinedVoiceSelect.value = 'browser:' + voiceSelect.value;
+            }
         } else {
-            logTTSInfo('Giọng đã chọn', 'Mặc định');
+            // Đang sử dụng Server TTS
+            if (selectedServerModel) {
+                combinedVoiceSelect.value = 'server:' + selectedServerModel;
+            }
         }
         
-        // Kiểm tra cài đặt
-        logTTSInfo('Bắt buộc tiếng Việt', forceVietnamese.checked ? 'Bật' : 'Tắt');
-        logTTSInfo('Sử dụng Web Speech API', useWebSpeech.checked ? 'Có' : 'Không (Server TTS)');
-        
-        // Kiểm tra tình trạng Server TTS
-        logTTSInfo('Server TTS', serverTtsActive ? 'Hoạt động' : 'Không hoạt động');
-        
-        if (!serverTtsActive) {
-            logTTSInfo('Cảnh báo', 'Server TTS không hoạt động, đã chuyển sang Web Speech API');
-        }
-        
-        // Kiểm tra HTML cleaning
-        const testHtml = '<p>Đây là <b>thử nghiệm</b> xử lý <i>HTML</i> cho TTS.</p>';
-        const cleanedText = stripHtml(testHtml);
-        logTTSInfo('HTML Cleaning', 'Hoạt động');
-        logTTSInfo('Văn bản gốc', testHtml);
-        logTTSInfo('Văn bản đã xử lý', cleanedText);
-    } else {
-        logTTSInfo('Web Speech API', 'Không được hỗ trợ');
-    }
-}
-
-// Chạy chẩn đoán khi trang đã load xong
-window.addEventListener('load', function() {
-    setTimeout(diagnoseTTS, 2000);
+        console.log('Đã khởi tạo xong voice selection. ' + 
+                  (useWebSpeech.checked ? 'Sử dụng Web Speech API' : 'Sử dụng Server TTS'));
+    }, 1000);
 });
-
-// Thêm nút chẩn đoán TTS vào giao diện
-const diagnoseTTSButton = document.createElement('button');
-diagnoseTTSButton.className = 'btn btn-info mt-2';
-diagnoseTTSButton.innerHTML = '<i class="fas fa-stethoscope"></i> Chẩn đoán TTS';
-diagnoseTTSButton.onclick = function() {
-    diagnoseTTS();
-    alert('Đã chạy chẩn đoán TTS, xem thông tin trong console (F12)');
-};
-
-// Thêm nút vào trang (ở cuối phần controls)
-document.querySelector('.voice-controls .card-body').appendChild(diagnoseTTSButton);
 
 // Hàm loại bỏ HTML tags từ văn bản
 function stripHtml(html) {
@@ -1410,43 +1475,54 @@ function streamingTTS(text) {
     // Dừng bất kỳ âm thanh nào đang phát
     stopAllSpeech();
     
-    // Đơn giản hóa - phát toàn bộ văn bản một lần thay vì chia thành nhiều phần
-    console.log("Phát toàn bộ văn bản một lần, không chia đoạn:", cleanText.length, "ký tự");
+    console.log(`Phát toàn bộ văn bản tiếng Việt, độ dài: ${cleanText.length} ký tự`);
     
     startTalkingAnimation();
     isSpeaking = true;
+    isPaused = false;
     updateSpeechControlButtonsState();
     
     // Log thông tin về voice được sử dụng
     if (useWebSpeech.checked) {
-        const voices = speechSynthesis.getVoices();
-        const vietnameseVoices = voices.filter(voice => 
-            voice.lang === 'vi-VN' || voice.lang === 'vi' || voice.lang.startsWith('vi-')
-        );
-        console.log(`Sử dụng Web Speech API với ${vietnameseVoices.length} giọng tiếng Việt có sẵn`);
-        const selectedVoice = voiceSelect.value ? voices[parseInt(voiceSelect.value)] : null;
-        console.log(`Voice đã chọn: ${selectedVoice ? selectedVoice.name : 'mặc định'}`);
-    } else {
-        console.log(`Sử dụng Server TTS với model: ${selectedServerModel}`);
-    }
-    
-    if (useWebSpeech.checked) {
+        console.log("Sử dụng Web Speech API");
+        
+        // Lấy thông tin giọng được chọn
+        if (voiceSelect.value) {
+            const voices = speechSynthesis.getVoices();
+            const selectedVoiceIndex = parseInt(voiceSelect.value);
+            if (!isNaN(selectedVoiceIndex) && selectedVoiceIndex >= 0 && selectedVoiceIndex < voices.length) {
+                const selectedVoice = voices[selectedVoiceIndex];
+                console.log(`Sử dụng giọng đã chọn: ${selectedVoice.name} (${selectedVoice.lang})`);
+            }
+        }
+        
         // Web Speech API
         speakWithBrowserTTS(cleanText, () => {
             console.log("Kết thúc phát toàn bộ văn bản");
-            stopTalkingAnimation();
-            isSpeaking = false;
-            isPaused = false;
-            updateSpeechControlButtonsState();
+            
+            // Chỉ dừng nếu không ở trạng thái tạm dừng
+            if (isSpeaking && !isPaused) {
+                stopTalkingAnimation();
+                isSpeaking = false;
+                isPaused = false;
+                updateSpeechControlButtonsState();
+            }
         });
     } else {
+        console.log("Sử dụng Server TTS");
+        console.log(`Model server được chọn: ${selectedServerModel}`);
+        
         // Server TTS
         speakWithServerTTS(cleanText).then(() => {
             console.log("Kết thúc phát toàn bộ văn bản");
-            stopTalkingAnimation();
-            isSpeaking = false;
-            isPaused = false;
-            updateSpeechControlButtonsState();
+            
+            // Chỉ dừng nếu không ở trạng thái tạm dừng
+            if (isSpeaking && !isPaused) {
+                stopTalkingAnimation();
+                isSpeaking = false;
+                isPaused = false;
+                updateSpeechControlButtonsState();
+            }
         }).catch(error => {
             console.error('Server TTS error:', error);
             stopTalkingAnimation();
@@ -1473,27 +1549,3 @@ function playTextToSpeechRealtime(text) {
         updateSpeechControlButtonsState();
     });
 }
-
-// Thêm CSS cho tin nhắn system
-const systemMessageStyle = document.createElement('style');
-systemMessageStyle.textContent = `
-    .message.system {
-        margin: 10px 0;
-        width: 100%;
-    }
-    
-    .message.system .content {
-        width: 100%;
-        max-width: 100%;
-        background-color: #f8f9fa;
-        border-radius: 8px;
-        border-left: 4px solid #17a2b8;
-    }
-    
-    .message.system .content pre {
-        max-height: 150px;
-        overflow-y: auto;
-        font-size: 0.85rem;
-    }
-`;
-document.head.appendChild(systemMessageStyle);
