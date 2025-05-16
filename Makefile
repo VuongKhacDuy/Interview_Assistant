@@ -2,15 +2,38 @@
 NODE = node
 NPM = npm
 APP_NAME = jd-assistant
+NODE_VERSION = 20.6.1
+NVM_DIR = $(HOME)/.nvm
 
 # Default target
 .PHONY: all
-all: install
+all: setup-env install
 
-# Install dependencies
+# Setup environment
+.PHONY: setup-env
+setup-env:
+	@echo "Setting up Node.js environment..."
+	@if ! command -v nvm >/dev/null 2>&1; then \
+		curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash; \
+		export NVM_DIR="$(HOME)/.nvm"; \
+		[ -s "$(NVM_DIR)/nvm.sh" ] && \. "$(NVM_DIR)/nvm.sh"; \
+	fi
+	@export NVM_DIR="$(HOME)/.nvm"; \
+	[ -s "$(NVM_DIR)/nvm.sh" ] && \. "$(NVM_DIR)/nvm.sh"; \
+	nvm install $(NODE_VERSION); \
+	nvm use $(NODE_VERSION)
+
+# Install all dependencies
 .PHONY: install
-install:
+install: setup-env
 	$(NPM) install
+	$(NPM) install @huggingface/transformers
+	$(NPM) install marked
+	$(NPM) install express
+	$(NPM) install cors
+	$(NPM) install dotenv
+	$(NPM) install body-parser
+	$(NPM) install --save-dev nodemon
 
 # Run in development mode
 .PHONY: dev
