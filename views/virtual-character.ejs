@@ -150,12 +150,13 @@
 <body>
     <%- include('partials/header', { title: 'Virtual Character' }) %>
     
-    <div class="container mt-4">
+    <div class="container-fluid mt-4">
         <%- include('partials/api-key-form', { showApiKeyForm: showApiKeyForm, message: message }) %>
         
-        <div class="row">
-            <div class="col-md-6">
-                <div class="character-panel">
+        <div class="row g-4"> <!-- Tăng g-3 lên g-4 để tăng khoảng cách giữa các hàng -->
+            <!-- Khung robot bên trái -->
+            <div class="col-md-3 px-3"> <!-- Thêm px-3 để tăng padding ngang -->
+                <div class="character-panel sticky-top" style="top: 20px;">
                     <div class="robot">
                         <div class="robot-head">
                             <div class="robot-eye left"></div>
@@ -165,147 +166,224 @@
                         <div class="robot-body"></div>
                     </div>
                 </div>
-                
-                <div class="voice-controls mt-3">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5>Cài đặt giọng nói</h5>
-                        </div>
-                        <div class="card-body">
-                            <div style="display: none;">
-                                <ul class="nav nav-tabs" id="voiceTabs" role="tablist">
-                                    <li class="nav-item" role="presentation">
-                                        <button class="nav-link active" id="browser-tab" data-bs-toggle="tab" data-bs-target="#browser-tts" type="button" role="tab" aria-controls="browser-tts" aria-selected="true">Trình duyệt</button>
-                                    </li>
-                                    <li class="nav-item" role="presentation">
-                                        <button class="nav-link" id="server-tab" data-bs-toggle="tab" data-bs-target="#server-tts" type="button" role="tab" aria-controls="server-tts" aria-selected="false">Server</button>
-                                    </li>
-                                </ul>
-                            </div>
-                            
-                            <div class="voice-options mb-3">
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        <label class="form-label fw-bold">Chọn giọng đọc</label>
-                                        <select id="combined-voice-select" class="form-select mb-2">
-                                            <option value="" disabled selected>Đang tải danh sách giọng đọc...</option>
-                                            <optgroup label="Giọng trình duyệt">
-                                                <!-- Giọng trình duyệt sẽ được thêm vào đây bằng JavaScript -->
-                                            </optgroup>
-                                            <optgroup label="Giọng server">
-                                                <!-- Giọng server sẽ được thêm vào đây bằng JavaScript -->
-                                            </optgroup>
-                                        </select>
-                                        
-                                        <!-- Giữ các select cũ nhưng ẩn đi, để không phải sửa nhiều JS -->
-                                        <div style="display: none;">
-                                            <select id="voice-select" class="form-select">
-                                                <option value="">Đang tải...</option>
-                                            </select>
-                                            <select id="server-model-select" class="form-select">
-                                                <option value="">Đang tải...</option>
-                                            </select>
+            </div>
+            
+            <!-- Khung voice-controls -->
+            <div class="col-md-9">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="voice-controls">
+                            <div class="card">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0">Cài đặt giọng nói</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div style="display: none;">
+                                        <ul class="nav nav-tabs" id="voiceTabs" role="tablist">
+                                            <li class="nav-item" role="presentation">
+                                                <button class="nav-link active" id="browser-tab" data-bs-toggle="tab" data-bs-target="#browser-tts" type="button" role="tab" aria-controls="browser-tts" aria-selected="true">Trình duyệt</button>
+                                            </li>
+                                            <li class="nav-item" role="presentation">
+                                                <button class="nav-link" id="server-tab" data-bs-toggle="tab" data-bs-target="#server-tts" type="button" role="tab" aria-controls="server-tts" aria-selected="false">Server</button>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    
+                                    <div class="voice-options mb-3">
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <label class="form-label fw-bold">Chọn giọng đọc</label>
+                                                <select id="combined-voice-select" class="form-select mb-2">
+                                                    <option value="" disabled selected>Đang tải danh sách giọng đọc...</option>
+                                                    <optgroup label="Giọng trình duyệt">
+                                                        <!-- Giọng trình duyệt sẽ được thêm vào đây bằng JavaScript -->
+                                                    </optgroup>
+                                                    <optgroup label="Giọng server">
+                                                        <!-- Giọng server sẽ được thêm vào đây bằng JavaScript -->
+                                                    </optgroup>
+                                                </select>
+                                                
+                                                <!-- Giữ các select cũ nhưng ẩn đi, để không phải sửa nhiều JS -->
+                                                <div style="display: none;">
+                                                    <select id="voice-select" class="form-select">
+                                                        <option value="">Đang tải...</option>
+                                                    </select>
+                                                    <select id="server-model-select" class="form-select">
+                                                        <option value="">Đang tải...</option>
+                                                    </select>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                            
-                            <div class="tab-content" id="voiceTabsContent" style="display: none;">
-                                <div class="tab-pane fade show active" id="browser-tts" role="tabpanel" aria-labelledby="browser-tab">
-                                </div>
-                                
-                                <div class="tab-pane fade" id="server-tts" role="tabpanel" aria-labelledby="server-tab">
-                                </div>
-                            </div>
-                            
-                            <div class="alert alert-warning mt-2" id="server-tts-warning" style="display: none;">
-                                <strong>Lưu ý:</strong> Model TTS server hiện đang gặp sự cố. Hệ thống sẽ tự động chuyển sang sử dụng Web Speech API. Bạn có thể thử lại sau.
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="rate-range" class="form-label">Tốc độ: <span id="rate-value">1</span></label>
-                                <input type="range" class="form-range" id="rate-range" min="0.5" max="2" step="0.1" value="1">
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="pitch-range" class="form-label">Cao độ: <span id="pitch-value">1</span></label>
-                                <input type="range" class="form-range" id="pitch-range" min="0.5" max="2" step="0.1" value="1">
-                            </div>
-                            
-                            <div class="form-check form-switch d-flex align-items-center">
-                                <input class="form-check-input me-2" type="checkbox" id="use-web-speech" checked>
-                                <label class="form-check-label" for="use-web-speech">Sử dụng giọng trình duyệt</label>
-                                <span class="ms-2 text-muted">(Bỏ chọn để sử dụng giọng server)</span>
-                            </div>
-                            
-                            <div class="form-check form-switch d-flex align-items-center mt-2">
-                                <input class="form-check-input me-2" type="checkbox" id="force-vietnamese" checked>
-                                <label class="form-check-label" for="force-vietnamese">Bắt buộc tiếng Việt</label>
-                                <span class="ms-2 text-muted">(Bỏ chọn để dùng ngôn ngữ khác)</span>
-                            </div>
-                            
-                            <style>
-                                .voice-options .row {
-                                    margin-bottom: 15px;
-                                }
-                                .voice-options select {
-                                    transition: all 0.3s;
-                                }
-                                #voice-select.active-voice {
-                                    border-color: #198754;
-                                    box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
-                                }
-                                #server-model-select.active-voice {
-                                    border-color: #198754;
-                                    box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
-                                }
-                            </style>
-                            
-                            <script>
-                                document.addEventListener('DOMContentLoaded', function() {
-                                    const useWebSpeech = document.getElementById('use-web-speech');
-                                    const voiceSelect = document.getElementById('voice-select');
-                                    const serverModelSelect = document.getElementById('server-model-select');
                                     
-                                    function updateVoiceSelectHighlight() {
-                                        if (useWebSpeech.checked) {
-                                            voiceSelect.classList.add('active-voice');
-                                            serverModelSelect.classList.remove('active-voice');
-                                        } else {
-                                            voiceSelect.classList.remove('active-voice');
-                                            serverModelSelect.classList.add('active-voice');
+                                    <div class="tab-content" id="voiceTabsContent" style="display: none;">
+                                        <div class="tab-pane fade show active" id="browser-tts" role="tabpanel" aria-labelledby="browser-tab">
+                                        </div>
+                                        
+                                        <div class="tab-pane fade" id="server-tts" role="tabpanel" aria-labelledby="server-tab">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="alert alert-warning mt-2" id="server-tts-warning" style="display: none;">
+                                        <strong>Lưu ý:</strong> Model TTS server hiện đang gặp sự cố. Hệ thống sẽ tự động chuyển sang sử dụng Web Speech API. Bạn có thể thử lại sau.
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="rate-range" class="form-label">Tốc độ: <span id="rate-value">1</span></label>
+                                        <input type="range" class="form-range" id="rate-range" min="0.5" max="2" step="0.1" value="1">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="pitch-range" class="form-label">Cao độ: <span id="pitch-value">1</span></label>
+                                        <input type="range" class="form-range" id="pitch-range" min="0.5" max="2" step="0.1" value="1">
+                                    </div>
+                                    
+                                    <div class="form-check form-switch d-flex align-items-center">
+                                        <input class="form-check-input me-2" type="checkbox" id="use-web-speech" checked>
+                                        <label class="form-check-label" for="use-web-speech">Sử dụng giọng trình duyệt</label>
+                                        <span class="ms-2 text-muted">(Bỏ chọn để sử dụng giọng server)</span>
+                                    </div>
+                                    
+                                    <div class="form-check form-switch d-flex align-items-center mt-2">
+                                        <input class="form-check-input me-2" type="checkbox" id="force-vietnamese" checked>
+                                        <label class="form-check-label" for="force-vietnamese">Bắt buộc tiếng Việt</label>
+                                        <span class="ms-2 text-muted">(Bỏ chọn để dùng ngôn ngữ khác)</span>
+                                    </div>
+                                    
+                                    <style>
+                                        .voice-options .row {
+                                            margin-bottom: 15px;
                                         }
-                                    }
+                                        .voice-options select {
+                                            transition: all 0.3s;
+                                        }
+                                        #voice-select.active-voice {
+                                            border-color: #198754;
+                                            box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+                                        }
+                                        #server-model-select.active-voice {
+                                            border-color: #198754;
+                                            box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+                                        }
+                                    </style>
                                     
-                                    updateVoiceSelectHighlight();
-                                    
-                                    useWebSpeech.addEventListener('change', updateVoiceSelectHighlight);
-                                });
-                            </script>
+                                    <script>
+                                        document.addEventListener('DOMContentLoaded', function() {
+                                            const useWebSpeech = document.getElementById('use-web-speech');
+                                            const voiceSelect = document.getElementById('voice-select');
+                                            const serverModelSelect = document.getElementById('server-model-select');
+                                            
+                                            function updateVoiceSelectHighlight() {
+                                                if (useWebSpeech.checked) {
+                                                    voiceSelect.classList.add('active-voice');
+                                                    serverModelSelect.classList.remove('active-voice');
+                                                } else {
+                                                    voiceSelect.classList.remove('active-voice');
+                                                    serverModelSelect.classList.add('active-voice');
+                                                }
+                                            }
+                                            
+                                            updateVoiceSelectHighlight();
+                                            
+                                            useWebSpeech.addEventListener('change', updateVoiceSelectHighlight);
+                                        });
+                                    </script>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="chat-panel">
-                    <div class="chat-header">
-                        <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
-                            <h5 class="mb-0">Chat với Robot</h5>
-                            <button id="clear-chat-btn" class="btn btn-sm btn-outline-secondary" title="Xóa chat">
-                                <i class="fas fa-trash"></i>
-                            </button>
+
+                    <!--khung chat -->
+                    <div class="col-md-9">
+                        <div class="chat-panel">
+                            <div class="chat-header">
+                                <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
+                                    <h5 class="mb-0">Chat với Robot</h5>
+                                    <button id="clear-chat-btn" class="btn btn-sm btn-outline-secondary" title="Xóa chat">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="chat-messages"></div>
+                            <div class="chat-input">
+                                <input type="text" id="user-input" class="form-control" placeholder="Nhập câu hỏi của bạn...">
+                                <button onclick="sendMessage()" class="btn btn-primary">Gửi</button>
+                            </div>
                         </div>
-                    </div>
-                    <div id="chat-messages"></div>
-                    <div class="chat-input">
-                        <input type="text" id="user-input" class="form-control" placeholder="Nhập câu hỏi của bạn...">
-                        <button onclick="sendMessage()" class="btn btn-primary">Gửi</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <style>
+        /* Cải thiện giao diện chung */
+        .container-fluid {
+            max-width: 100%;
+            padding: 0 15px; /* Tăng padding container */
+        }
+        
+        /* Điều chỉnh khoảng cách và layout */
+        .row {
+            margin: 0 -15px; /* Tăng margin âm để bù trừ padding lớn hơn */
+        }
+        
+        .col-md-2, .col-md-3, .col-md-4, .col-md-6, .col-md-7, .col-md-9 {
+            padding: 0 35px; /* Tăng padding cho các cột */
+        }
+
+        /* Các style khác giữ nguyên */
+        .character-panel {
+            background: linear-gradient(145deg, #ffffff, #f0f0f0);
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            padding: 15px;
+            height: calc(100vh - 120px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        /* Cải thiện khung chat */
+        .chat-panel {
+            height: calc(100vh - 120px);
+            background: #fff;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin-top: 0px;
+            margin-right: 10px;
+        }
+        
+        /* Cải thiện phần cài đặt giọng nói */
+        .voice-controls .card {
+            height: calc(100vh - 120px);
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: #fff;
+            overflow-y: auto;
+        }
+
+        .row {
+            margin: 0 -10px;
+        }
+        
+        .col-md-2, .col-md-4, .col-md-6 {
+            padding: 0 10px;
+        }
+
+        /* Đảm bảo responsive */
+        @media (max-width: 768px) {
+            .character-panel,
+            .chat-panel,
+            .voice-controls .card {
+                height: auto;
+                min-height: 400px;
+            }
+        }
+    </style>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/js/virtual-character.js"></script>
 </body>

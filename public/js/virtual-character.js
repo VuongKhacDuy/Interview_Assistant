@@ -111,6 +111,10 @@ serverTab.addEventListener('click', function() {
     useWebSpeech.checked = false;
 });
 
+// Thêm biến để kiểm soát thời gian im lặng
+let silenceTimeout = null;
+const SILENCE_THRESHOLD = 2000; // 2 giây im lặng trước khi dừng
+
 // Khởi tạo SpeechRecognition
 function initSpeechRecognition() {
     // Kiểm tra trình duyệt hỗ trợ
@@ -123,23 +127,35 @@ function initSpeechRecognition() {
     // Khởi tạo recognition
     speechRecognition = new SpeechRecognition();
     speechRecognition.lang = 'vi-VN';
-    speechRecognition.continuous = false;
-    speechRecognition.interimResults = false;
+    speechRecognition.continuous = true;
+    speechRecognition.interimResults = true;
     
     // Xử lý kết quả
     speechRecognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        userInput.value = transcript;
+        // Reset silence timeout mỗi khi có kết quả
+        if (silenceTimeout) {
+            clearTimeout(silenceTimeout);
+        }
+        
+        const result = event.results[event.results.length - 1];
+        const transcript = result[0].transcript;
+        
+        if (result.isFinal) {
+            userInput.value = transcript;
+            // Chỉ tự động gửi nếu người dùng đã im lặng đủ lâu
+            silenceTimeout = setTimeout(() => {
+                toggleListening(false);
+                if (userInput.value.trim()) {
+                    sendMessage();
+                }
+            }, SILENCE_THRESHOLD);
+        } else {
+            userInput.value = transcript;
+        }
     };
     
     speechRecognition.onend = () => {
         toggleListening(false);
-        // Tự động gửi tin nhắn nếu đã nhận được văn bản
-        if (userInput.value.trim()) {
-            setTimeout(() => {
-                sendMessage();
-            }, 500);
-        }
     };
     
     speechRecognition.onerror = (event) => {
@@ -165,6 +181,12 @@ function toggleListening(start = null) {
         }
         
         try {
+            // Xóa timeout nếu có
+            if (silenceTimeout) {
+                clearTimeout(silenceTimeout);
+                silenceTimeout = null;
+            }
+            
             speechRecognition.start();
             voiceInputButton.classList.add('listening');
             voiceInputButton.innerHTML = '<i class="fas fa-microphone"></i> Đang nghe...';
@@ -172,6 +194,12 @@ function toggleListening(start = null) {
             console.error('Error starting speech recognition:', error);
         }
     } else {
+        // Xóa timeout khi dừng
+        if (silenceTimeout) {
+            clearTimeout(silenceTimeout);
+            silenceTimeout = null;
+        }
+        
         if (speechRecognition) {
             try {
                 speechRecognition.stop();
@@ -1167,18 +1195,6 @@ testStreamingButton.onclick = function() {
 
 // Thêm nút vào trang
 document.querySelector('.voice-controls .card-body').appendChild(testStreamingButton);
-
-// Tạo nút xóa nội dung chat
-// const clearChatButton = document.createElement('button');
-// clearChatButton.className = 'btn btn-secondary mt-2 ms-2';
-// clearChatButton.innerHTML = '<i class="fas fa-trash"></i> Xóa chat';
-// clearChatButton.title = 'Xóa toàn bộ nội dung chat';
-// clearChatButton.onclick = function() {
-//     clearChatMessages();
-// };
-
-// Thêm nút vào trang
-// document.querySelector('.voice-controls .card-body').appendChild(clearChatButton);
 
 // Hàm xóa nội dung chat
 function clearChatMessages() {
