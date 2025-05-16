@@ -15,7 +15,6 @@
             border-radius: 18px;
             border-top-left-radius: 0;
             min-width: 50px;
-            display: inline-block;
         }
         
         .dot-flashing {
@@ -61,86 +60,82 @@
             50%, 100% { background-color: #ccc; }
         }
         
-        /* Reset và thiết lập lại cấu trúc chat messages */
-        #chat-messages {
-            display: flex;
-            flex-direction: column;
-            align-items: stretch;
-            overflow-y: auto;
-            padding: 20px;
-            background-color: #f9f9f9;
-            font-size: 14px !important;
-        }
-        
-        #chat-messages .message {
-            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
-            border-radius: 10px;
-            margin-bottom: 15px;
-            max-width: 90%;
-            overflow: hidden;
-            border: 1px solid #eaeaea;
-            background-color: white;
-            display: block;
-            float: none;
-            margin-left: 0;
-            margin-right: 0;
-            clear: both;
-        }
-        
-        #chat-messages .message.user {
-            float: right;
-            background-color: #e6f7ff;
-            border-color: #d0e8ff;
-        }
-        
-        #chat-messages .message.robot {
-            float: left;
-            background-color: #fff;
-            border-color: #e0e0e0;
-        }
-        
-        #chat-messages .message .content {
-            padding: 15px;
-            font-size: 14px;
-            border-radius: 0 !important;
-            width: 100%;
-            box-sizing: border-box;
-            display: block;
-            text-align: left;
-            background: transparent !important;
-        }
-        
-        #chat-messages .message.user .content {
-            text-align: left;
-            color: #0d47a1;
-        }
-        
-        #chat-messages .message.robot .content {
-            text-align: left;
-            color: #212121;
-        }
-        
-        /* Định dạng danh sách */
+        /* Sửa lỗi layout và hiển thị nội dung */
         #chat-messages .message .content ul,
         #chat-messages .message .content ol {
-            padding-left: 20px;
-            margin: 8px 0;
-            display: block;
-            font-size: 14px;
-            width: 100%;
-            box-sizing: border-box;
+            padding-left: 25px;
+            margin-top: 5px;
+            margin-bottom: 5px;
+            list-style-position: outside;
         }
         
         #chat-messages .message .content li {
-            display: list-item;
             margin-bottom: 5px;
-            text-align: left;
-            font-size: 14px;
+            display: list-item;
+            margin-left: 5px;
+            padding-left: 3px;
+        }
+        
+        #chat-messages .message .content ul li {
+            list-style-type: disc;
+        }
+        
+        #chat-messages .message .content ol li {
+            list-style-type: decimal;
+        }
+        
+        /* Điều chỉnh khoảng cách và hiển thị */
+        #chat-messages:after {
+            content: "";
+            display: table;
+            clear: both;
         }
         
         /* Đảm bảo các tin nhắn có margin dưới */
         #chat-messages .message:last-child {
             margin-bottom: 10px;
+        }
+        
+        /* Fix hiển thị full nội dung tin nhắn */
+        #chat-messages .message {
+            width: 100%;
+            display: block;
+            margin-bottom: 15px;
+            clear: both;
+        }
+        
+        #chat-messages .message.user {
+            float: right;
+            text-align: right;
+        }
+        
+        #chat-messages .message.robot {
+            float: left;
+            text-align: left;
+        }
+        
+        #chat-messages .message .content {
+            display: inline-block;
+            max-width: 85%;
+            word-wrap: break-word;
+            padding: 10px 15px;
+            border-radius: 18px;
+            overflow-wrap: break-word;
+        }
+        
+        /* Thêm clearfix sau mỗi tin nhắn */
+        #chat-messages .clearfix {
+            clear: both;
+            height: 1px;
+            display: block;
+            width: 100%;
+            visibility: hidden;
+        }
+        
+        /* Đảm bảo nội dung dài vẫn hiển thị đầy đủ */
+        #chat-messages .content > * {
+            max-width: 100%;
+            overflow-wrap: break-word;
         }
         
         /* Đảm bảo danh sách hiển thị đúng */
@@ -149,31 +144,6 @@
             width: 100%;
             display: inline-block;
             box-sizing: border-box;
-        }
-        
-        /* Đảm bảo nội dung dài vẫn hiển thị đầy đủ */
-        #chat-messages .content > * {
-            max-width: 100% !important;
-            overflow-wrap: break-word;
-            font-size: 14px !important;
-        }
-        
-        /* Làm rõ clearfix */
-        #chat-messages::after {
-            content: "";
-            display: table;
-            clear: both;
-            height: 0;
-            visibility: hidden;
-        }
-        
-        /* Thêm clearfix sau mỗi tin nhắn */
-        #chat-messages .message::after {
-            content: "";
-            display: table;
-            clear: both;
-            height: 0;
-            visibility: hidden;
         }
     </style>
 </head>
@@ -326,7 +296,7 @@
                             </button>
                         </div>
                     </div>
-                    <div id="chat-messages" style="float: none !important; display: flex !important; flex-direction: column !important;"></div>
+                    <div id="chat-messages"></div>
                     <div class="chat-input">
                         <input type="text" id="user-input" class="form-control" placeholder="Nhập câu hỏi của bạn...">
                         <button onclick="sendMessage()" class="btn btn-primary">Gửi</button>
@@ -338,39 +308,5 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/js/virtual-character.js"></script>
-    <script>
-        // Clean up any conflicting styles when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            // Reset chat container
-            const chatMessages = document.getElementById('chat-messages');
-            if (chatMessages) {
-                chatMessages.style.display = 'block';
-                
-                // Clean up all messages
-                const allMessages = document.querySelectorAll('#chat-messages .message');
-                allMessages.forEach(msg => {
-                    if (msg.classList.contains('user')) {
-                        msg.style.float = 'right';
-                        msg.style.clear = 'both';
-                        msg.style.backgroundColor = '#e6f7ff';
-                        msg.style.borderColor = '#d0e8ff';
-                    } else {
-                        msg.style.float = 'left';
-                        msg.style.clear = 'both';
-                        msg.style.backgroundColor = '#fff';
-                        msg.style.borderColor = '#e0e0e0';
-                    }
-                    
-                    // Reset content style
-                    const content = msg.querySelector('.content');
-                    if (content) {
-                        content.style.borderRadius = '0';
-                        content.style.padding = '15px';
-                        content.style.background = 'transparent';
-                    }
-                });
-            }
-        });
-    </script>
 </body>
 </html>

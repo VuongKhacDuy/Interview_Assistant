@@ -631,39 +631,591 @@ document.getElementById('clear-chat-btn').addEventListener('click', clearChatMes
 
 // Cập nhật phương thức hiển thị tin nhắn để có giao diện đẹp hơn
 function addMessageToChat(sender, message, isError = false) {
-    // Tạo container cho tin nhắn
     const messageElement = document.createElement('div');
     messageElement.className = `message ${sender.toLowerCase()}`;
     
-    // Áp dụng style cho message container
-    Object.assign(messageElement.style, {
-        width: '100%',
-        maxWidth: '90%',
-        marginBottom: '15px',
-        display: 'flex',
-        flexDirection: 'column',
-        borderRadius: '10px',
-        overflow: 'hidden',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-        float: 'none',
-        clear: 'both'
-    });
+    const contentElement = document.createElement('div');
+    contentElement.className = 'content';
     
-    if (sender.toLowerCase() === 'user') {
-        Object.assign(messageElement.style, {
-            alignSelf: 'flex-end',
-            backgroundColor: '#e6f7ff',
-            border: '1px solid #d0e8ff'
-        });
+    // Đảm bảo tin nhắn hiển thị đúng trước khi thêm vào DOM
+    const formattedMessage = message.trim();
+    
+    if (isError) {
+        contentElement.classList.add('error');
+        contentElement.innerHTML = formattedMessage;
+    } else if (sender === 'System') {
+        // Xử lý đặc biệt cho tin nhắn hệ thống
+        contentElement.classList.add('system-message');
+        contentElement.innerHTML = formattedMessage;
+        messageElement.classList.add('system');
     } else {
-        Object.assign(messageElement.style, {
-            alignSelf: 'flex-start',
-            backgroundColor: '#ffffff',
-            border: '1px solid #e0e0e0'
+        // Xử lý tin nhắn thông thường
+        contentElement.innerHTML = formattedMessage;
+        
+        // Fix lỗi hiển thị danh sách - đảm bảo các thẻ list hiển thị đúng
+        const lists = contentElement.querySelectorAll('ul, ol');
+        lists.forEach(list => {
+            list.style.paddingLeft = '25px';
+            list.style.listStylePosition = 'outside';
+            list.style.marginTop = '5px';
+            list.style.marginBottom = '5px';
+            
+            const items = list.querySelectorAll('li');
+            items.forEach(item => {
+                item.style.display = 'list-item';
+                item.style.marginBottom = '5px';
+                item.style.marginLeft = '5px';
+                item.style.paddingLeft = '3px';
+            });
         });
     }
     
-    // Tạo container cho nội dung tin nhắn
+    messageElement.appendChild(contentElement);
+    
+    // Thêm vào chat và scroll xuống
+    chatMessages.appendChild(messageElement);
+    
+    // Fix lỗi đè lên nhau bằng cách thêm clearfix sau mỗi tin nhắn
+    const clearFix = document.createElement('div');
+    clearFix.className = 'clearfix';
+    chatMessages.appendChild(clearFix);
+    
+    // Scroll xuống tin nhắn mới nhất
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// Cập nhật phương thức sendMessage
+async function sendMessage() {
+    const message = userInput.value.trim();
+    if (!message) return;
+
+    // Dừng âm thanh nếu đang phát
+    stopAllSpeech();
+
+    // Thêm tin nhắn người dùng với giao diện đẹp hơn
+    addMessageToChat('User', message);
+    userInput.value = '';
+
+    // Tạo một placeholder cho tin nhắn robot với animation "đang soạn văn bản"
+    const robotMessageElement = document.createElement('div');
+    robotMessageElement.className = 'message robot';
+    
+    const contentElement = document.createElement('div');
+    contentElement.className = 'content typing-animation';
+    contentElement.innerHTML = '<div class="dot-flashing"></div>';
+    
+    robotMessageElement.appendChild(contentElement);
+    chatMessages.appendChild(robotMessageElement);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    try {
+        const response = await fetch('/virtual-character/generate-response', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ message })
+        });
+
+        const data = await response.json();
+        if (data.error) {
+            throw new Error(data.error);
+        }
+
+        // Đảm bảo voice selection nhất quán trước khi phát âm thanh
+        if (useWebSpeech.checked) {
+            ensureConsistentVoiceSelection();
+        }
+        
+        // Lưu nội dung phản hồi để sử dụng sau
+        const responseText = data.response;
+        
+        console.log("Chuẩn bị phát âm thanh với phương thức: " + 
+                  (useWebSpeech.checked ? "Web Speech API" : "Server TTS"));
+        
+        // Xử lý phát âm và hiển thị text đồng thời
+        if (useWebSpeech.checked) {
+            // Sử dụng Web Speech API
+            const cleanText = stripHtml(responseText);
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            
+            // Thiết lập voice và các thông số
+            const voices = speechSynthesis.getVoices();
+            if (voiceSelect.value) {
+                const selectedVoiceIndex = parseInt(voiceSelect.value);
+                if (!isNaN(selectedVoiceIndex) && selectedVoiceIndex >= 0 && selectedVoiceIndex < voices.length) {
+                    utterance.voice = voices[selectedVoiceIndex];
+                    utterance.lang = utterance.voice.lang;
+                }
+            }
+            
+            utterance.rate = parseFloat(rateRange.value);
+            utterance.pitch = parseFloat(pitchRange.value);
+            utterance.volume = 1.0;
+            
+            // Lưu utterance hiện tại để có thể pause/resume
+            speechUtterance = utterance;
+            
+            // Bắt đầu animation nói
+            startTalkingAnimation();
+            isSpeaking = true;
+            updateSpeechControlButtonsState();
+            
+            // Đặt sự kiện để hiển thị text khi bắt đầu phát âm thanh
+            utterance.onstart = () => {
+                // Thay thế animation "đang soạn" bằng nội dung thực
+                robotMessageElement.remove();
+                addMessageToChat('Robot', responseText);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            };
+            
+            utterance.onend = () => {
+                stopTalkingAnimation();
+                isSpeaking = false;
+                isPaused = false;
+                updateSpeechControlButtonsState();
+            };
+            
+            // Đảm bảo hủy các speech trước đó
+            speechSynthesis.cancel();
+            
+            // Khởi động watchdog cho Chrome nếu cần
+            if (window.chrome) {
+                if (window.speechSynthesisWatchdog) {
+                    clearInterval(window.speechSynthesisWatchdog);
+                }
+                
+                window.speechSynthesisWatchdog = setInterval(() => {
+                    if (speechSynthesis.speaking && !speechSynthesis.paused) {
+                        console.log("Chrome watchdog: giữ cho speech hoạt động");
+                        speechSynthesis.pause();
+                        setTimeout(() => {
+                            speechSynthesis.resume();
+                        }, 50);
+                    }
+                }, 5000);
+            }
+            
+            // Phát âm thanh
+            speechSynthesis.speak(utterance);
+        } else {
+            // Sử dụng Server TTS
+            try {
+                const cleanText = stripHtml(responseText);
+                
+                // Bắt đầu animation nói
+                startTalkingAnimation();
+                isSpeaking = true;
+                updateSpeechControlButtonsState();
+                
+                console.log(`Yêu cầu TTS từ server cho text: "${cleanText}", model: ${selectedServerModel}`);
+                const response = await fetch('/virtual-character/tts/synthesize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        text: cleanText,
+                        modelId: selectedServerModel
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('TTS request failed');
+                }
+                
+                const audioBlob = await response.blob();
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const audio = new Audio(audioUrl);
+                currentAudio = audio;
+                
+                // Hiển thị text khi audio đã sẵn sàng phát
+                audio.onloadeddata = () => {
+                    robotMessageElement.remove();
+                    addMessageToChat('Robot', responseText);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    
+                    // Phát audio
+                    audio.play();
+                };
+                
+                audio.onended = () => {
+                    URL.revokeObjectURL(audioUrl);
+                    currentAudio = null;
+                    stopTalkingAnimation();
+                    isSpeaking = false;
+                    isPaused = false;
+                    updateSpeechControlButtonsState();
+                };
+                
+                audio.onerror = (error) => {
+                    URL.revokeObjectURL(audioUrl);
+                    currentAudio = null;
+                    console.error('Audio playback error:', error);
+                    
+                    // Nếu lỗi phát audio, vẫn hiển thị text
+                    robotMessageElement.remove();
+                    addMessageToChat('Robot', responseText);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    
+                    stopTalkingAnimation();
+                    isSpeaking = false;
+                    isPaused = false;
+                    updateSpeechControlButtonsState();
+                };
+                
+                // Bắt đầu tải audio
+                audio.load();
+            } catch (error) {
+                console.error('Server TTS Error:', error);
+                
+                // Nếu lỗi server TTS, vẫn hiển thị text
+                robotMessageElement.remove();
+                addMessageToChat('Robot', responseText);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                stopTalkingAnimation();
+                isSpeaking = false;
+                isPaused = false;
+                updateSpeechControlButtonsState();
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        
+        // Xóa animation "đang soạn"
+        robotMessageElement.remove();
+        
+        // Hiển thị thông báo lỗi
+        addMessageToChat('Robot', 'Xin lỗi, đã có lỗi xảy ra.', true);
+        stopTalkingAnimation();
+        isSpeaking = false;
+        updateSpeechControlButtonsState();
+    }
+}
+
+userInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        sendMessage();
+    }
+});
+
+// Hàm phát âm thanh từ server
+async function speakWithServerTTS(text) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            // Loại bỏ HTML tags nếu có
+            const cleanText = stripHtml(text);
+            
+            // Kiểm tra nếu đã dừng bởi người dùng
+            if (!isSpeaking) {
+                resolve();
+                return;
+            }
+            
+            // Nếu server TTS đã được đánh dấu là có vấn đề, chuyển ngay sang Web Speech API
+            if (!serverTtsActive) {
+                console.log('Server TTS đã bị vô hiệu hóa, sử dụng Web Speech API');
+                speakWithBrowserTTS(cleanText, resolve);
+                return;
+            }
+
+            console.log(`Yêu cầu TTS từ server cho text: "${cleanText}", model: ${selectedServerModel}`);
+            const response = await fetch('/virtual-character/tts/synthesize', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    text: cleanText,
+                    modelId: selectedServerModel
+                })
+            });
+
+            // Kiểm tra lại nếu đã dừng trong khi chờ server phản hồi
+            if (!isSpeaking) {
+                resolve();
+                return;
+            }
+
+            if (!response.ok) {
+                console.error(`Server trả về lỗi: ${response.status} ${response.statusText}`);
+                throw new Error('TTS request failed');
+            }
+
+            const audioBlob = await response.blob();
+            console.log(`Đã nhận phản hồi từ server, kích thước blob: ${audioBlob.size} bytes`);
+            
+            // Kiểm tra lại nếu đã dừng
+            if (!isSpeaking) {
+                resolve();
+                return;
+            }
+            
+            // Kiểm tra kích thước blob - nếu quá nhỏ có thể là fallback audio
+            if (audioBlob.size < 1000) {
+                console.warn('Nhận được audio rỗng từ server, chuyển sang Web Speech API');
+                
+                // Đánh dấu server TTS có vấn đề
+                serverTtsActive = false;
+                showServerTtsWarning(true);
+                
+                // Tự động chuyển sang Web Speech API
+                if (!useWebSpeech.checked) {
+                    console.log('Tự động kích hoạt Web Speech API');
+                    useWebSpeech.checked = true;
+                    // Chuyển tab sang browser
+                    const browserTabButton = document.getElementById('browser-tab');
+                    if (browserTabButton) {
+                        browserTabButton.click();
+                    }
+                }
+                
+                // Kiểm tra lại nếu đã dừng
+                if (!isSpeaking) {
+                    resolve();
+                    return;
+                }
+                
+                // Phát âm thanh sử dụng Web Speech API
+                speakWithBrowserTTS(cleanText, resolve);
+                return;
+            }
+            
+            const audioUrl = URL.createObjectURL(audioBlob);
+            const audio = new Audio(audioUrl);
+            currentAudio = audio; // Lưu lại để có thể dừng/tạm dừng nếu cần
+            
+            console.log('Phát âm thanh từ server');
+            audio.onended = () => {
+                URL.revokeObjectURL(audioUrl);
+                currentAudio = null;
+                console.log('Kết thúc phát âm thanh từ server');
+                isSpeaking = false;
+                isPaused = false;
+                updateSpeechControlButtonsState();
+                resolve();
+            };
+            
+            audio.onerror = (error) => {
+                URL.revokeObjectURL(audioUrl);
+                currentAudio = null;
+                console.error('Audio playback error:', error);
+                isSpeaking = false;
+                isPaused = false;
+                updateSpeechControlButtonsState();
+                
+                // Kiểm tra lại nếu đã dừng
+                if (!isSpeaking) {
+                    resolve();
+                    return;
+                }
+                
+                // Fallback to Web Speech API if audio fails to play
+                console.log('Fallback to Web Speech API due to audio error');
+                speakWithBrowserTTS(cleanText, resolve);
+            };
+
+            await audio.play();
+        } catch (error) {
+            console.error('Server TTS Error:', error);
+            
+            // Đánh dấu server TTS có vấn đề
+            serverTtsActive = false;
+            showServerTtsWarning(true);
+            
+            // Kiểm tra lại nếu đã dừng
+            if (!isSpeaking) {
+                resolve();
+                return;
+            }
+            
+            // Nếu server-side TTS thất bại, sử dụng Web Speech API
+            console.log('Fallback to Web Speech API due to server error');
+            speakWithBrowserTTS(text, resolve);
+        }
+    });
+}
+
+// Hàm mới để phát âm thanh với Web Speech API
+function speakWithBrowserTTS(text, callback) {
+    // Loại bỏ HTML tags nếu có
+    const cleanText = stripHtml(text);
+    
+    // Tạo utterance
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    
+    // Lấy voice đã chọn
+    const voices = speechSynthesis.getVoices();
+    console.log(`Browser TTS: Danh sách giọng nói có sẵn: ${voices.length}`);
+    
+    // Tìm và log các giọng tiếng Việt - vẫn hữu ích cho debug
+    const vietnameseVoices = voices.filter(voice => 
+        voice.lang === 'vi-VN' || voice.lang === 'vi' || voice.lang.startsWith('vi-')
+    );
+    console.log(`Browser TTS: Giọng tiếng Việt có sẵn: ${vietnameseVoices.length}`);
+    
+    // Ưu tiên giọng tiếng Việt
+    let voiceFound = false;
+    
+    // 1. Dùng voice đã được chọn từ dropdown bất kể ngôn ngữ gì
+    if (voiceSelect.value) {
+        const selectedVoiceIndex = parseInt(voiceSelect.value);
+        if (!isNaN(selectedVoiceIndex) && selectedVoiceIndex >= 0 && selectedVoiceIndex < voices.length) {
+            const selectedVoice = voices[selectedVoiceIndex];
+            utterance.voice = selectedVoice;
+            
+            // Sử dụng ngôn ngữ của giọng được chọn
+            utterance.lang = selectedVoice.lang;
+            console.log(`Browser TTS: Sử dụng giọng đã chọn: ${selectedVoice.name} (${selectedVoice.lang})`);
+            voiceFound = true;
+        }
+    } 
+    
+    // 2. Nếu không có chọn trên UI và bắt buộc tiếng Việt, tìm giọng tiếng Việt đầu tiên
+    if (!voiceFound && forceVietnamese.checked && vietnameseVoices.length > 0) {
+        utterance.voice = vietnameseVoices[0];
+        utterance.lang = vietnameseVoices[0].lang;
+        console.log(`Browser TTS: Sử dụng giọng tiếng Việt đầu tiên tìm được: ${utterance.voice.name}`);
+        voiceFound = true;
+    } else if (!voiceFound) {
+        // Không có giọng được chọn, sử dụng giọng mặc định của trình duyệt
+        console.log(`Browser TTS: Không có giọng được chọn, sử dụng giọng mặc định`);
+        // Không cần đặt lang ở đây để trình duyệt tự chọn language mặc định
+    }
+    
+    // Cập nhật rate và pitch từ sliders
+    utterance.rate = parseFloat(rateRange.value);
+    utterance.pitch = parseFloat(pitchRange.value);
+    utterance.volume = 1.0; // Đảm bảo âm lượng tối đa
+    
+    utterance.onend = () => {
+        console.log('Browser TTS: Kết thúc phát âm thanh');
+        if (callback) callback();
+    };
+    
+    utterance.onerror = (error) => {
+        console.error('Browser TTS: Lỗi phát âm thanh:', error);
+        if (callback) callback();
+    };
+    
+    // Lưu utterance hiện tại để có thể pause/resume
+    speechUtterance = utterance;
+    
+    console.log(`Browser TTS: Phát âm thanh với giọng: ${utterance.voice?.name || 'mặc định'}, ngôn ngữ: ${utterance.lang || 'mặc định'}, độ dài: ${cleanText.length} ký tự`);
+    
+    // Đảm bảo hủy các speech trước đó
+    speechSynthesis.cancel();
+    
+    // Khởi động watchdog cho Chrome (giúp phát văn bản dài)
+    if (window.chrome) {
+        // Khởi động watchdog để tránh Chrome tự động dừng sau 15 giây
+        if (window.speechSynthesisWatchdog) {
+            clearInterval(window.speechSynthesisWatchdog);
+        }
+        
+        window.speechSynthesisWatchdog = setInterval(() => {
+            if (speechSynthesis.speaking && !speechSynthesis.paused) {
+                console.log("Chrome watchdog: giữ cho speech hoạt động");
+                speechSynthesis.pause();
+                setTimeout(() => {
+                    speechSynthesis.resume();
+                }, 50);
+            }
+        }, 5000);
+    }
+    
+    // Phát âm thanh
+    speechSynthesis.speak(utterance);
+}
+
+async function fallbackServerTTS(text) {
+    try {
+        startTalkingAnimation();
+        isSpeaking = true;
+        updateSpeechControlButtonsState();
+        await speakWithServerTTS(text);
+        // Chỉ dừng animation nếu vẫn đang trong trạng thái nói
+        if (isSpeaking) {
+            stopTalkingAnimation();
+            isSpeaking = false;
+            updateSpeechControlButtonsState();
+        }
+    } catch (error) {
+        console.error('TTS Error:', error);
+        stopTalkingAnimation();
+        isSpeaking = false;
+        updateSpeechControlButtonsState();
+    }
+}
+
+// Thêm nút để test streaming TTS
+const testStreamingButton = document.createElement('button');
+testStreamingButton.className = 'btn btn-outline-primary mt-2';
+testStreamingButton.textContent = 'Test HTML Cleaning & TTS';
+testStreamingButton.onclick = function() {
+    const testText = `<div class="test-content">
+    <p>Xin chào! Rất vui được gặp bạn! Tôi là <strong>Nora</strong> là trợ lý ảo có thể trả lời <em>các câu hỏi</em> của bạn.</p>
+    </div>`;
+    
+    // Hiển thị tin nhắn với HTML
+    addMessageToChat('Robot', testText);
+    
+    // Phát âm văn bản đã xử lý
+    streamingTTS(testText);
+};
+
+// Thêm nút vào trang
+document.querySelector('.voice-controls .card-body').appendChild(testStreamingButton);
+
+// Tạo nút xóa nội dung chat
+// const clearChatButton = document.createElement('button');
+// clearChatButton.className = 'btn btn-secondary mt-2 ms-2';
+// clearChatButton.innerHTML = '<i class="fas fa-trash"></i> Xóa chat';
+// clearChatButton.title = 'Xóa toàn bộ nội dung chat';
+// clearChatButton.onclick = function() {
+//     clearChatMessages();
+// };
+
+// Thêm nút vào trang
+// document.querySelector('.voice-controls .card-body').appendChild(clearChatButton);
+
+// Hàm xóa nội dung chat
+function clearChatMessages() {
+    // Dừng bất kỳ âm thanh nào đang phát
+    stopAllSpeech();
+    
+    // Xóa nội dung chat
+    chatMessages.innerHTML = '';
+    
+    // Thêm thông báo xóa thành công
+    const clearNotice = document.createElement('div');
+    clearNotice.className = 'text-center text-muted my-3';
+    clearNotice.innerHTML = '<i class="fas fa-check-circle"></i> Đã xóa lịch sử chat';
+    chatMessages.appendChild(clearNotice);
+    
+    // Tự động ẩn thông báo sau 3 giây
+    setTimeout(() => {
+        if (clearNotice.parentNode === chatMessages) {
+            chatMessages.removeChild(clearNotice);
+        }
+    }, 3000);
+}
+
+// Xử lý streaming response với Server-Sent Events
+async function sendStreamMessage() {
+    const message = userInput.value.trim();
+    if (!message) return;
+
+    stopAllSpeech();
+
+    addMessageToChat('User', message);
+    userInput.value = '';
+    
+    // Tạo placeholder với animation "đang soạn văn bản"
+    const robotMessageElement = document.createElement('div');
+    robotMessageElement.className = 'message robot';
+    
     const contentElement = document.createElement('div');
     contentElement.className = 'content typing-animation';
     contentElement.innerHTML = '<div class="dot-flashing"></div>';
@@ -721,6 +1273,11 @@ function addMessageToChat(sender, message, isError = false) {
                         newContentElement.appendChild(streamingResponseSpan);
                         newMessageElement.appendChild(newContentElement);
                         chatMessages.appendChild(newMessageElement);
+                        
+                        // Add clearfix after the message to prevent layout issues
+                        const clearFix = document.createElement('div');
+                        clearFix.className = 'clearfix';
+                        chatMessages.appendChild(clearFix);
                         
                         // Bắt đầu animation nói và cập nhật trạng thái
                         startTalkingAnimation();
@@ -1070,126 +1627,65 @@ document.head.appendChild(combinedSelectStyle);
 // Thêm CSS cho cải thiện hiển thị chat messages
 const chatMessageStyle = document.createElement('style');
 chatMessageStyle.textContent = `
-    /* Reset lại toàn bộ cách hiển thị chat messages */
-    #chat-messages {
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        overflow-y: auto;
-        padding: 20px;
-    }
-    
+    /* Fix hiển thị chat messages */
     #chat-messages .message {
         width: 100%;
+        float: none;
+        clear: both;
+        overflow: visible;
         margin-bottom: 15px;
-        display: flex;
-        flex-direction: row;
     }
     
     #chat-messages .message.user {
-        justify-content: flex-end;
+        float: right;
+        text-align: right;
     }
     
     #chat-messages .message.robot {
-        justify-content: flex-start;
+        float: left;
+        text-align: left;
     }
     
     #chat-messages .message .content {
-        max-width: 80%;
+        display: inline-block;
+        max-width: 85%;
         word-wrap: break-word;
         overflow-wrap: break-word;
-        padding: 10px 15px;
-        border-radius: 18px;
     }
     
-    #chat-messages .message.user .content {
-        background-color: #e3f2fd;
-        color: #0d47a1;
-        border-top-right-radius: 0;
-        text-align: left;
-    }
-    
-    #chat-messages .message.robot .content {
-        background-color: #f5f5f5;
-        color: #212121;
-        border-top-left-radius: 0;
-        text-align: left;
-    }
-    
-    /* Định dạng danh sách */
+    /* Cải thiện hiển thị danh sách */
     #chat-messages .message .content ul,
     #chat-messages .message .content ol {
-        padding-left: 25px !important;
-        margin-top: 10px !important;
-        margin-bottom: 10px !important;
-        list-style-position: outside !important;
         text-align: left;
-        width: 100% !important;
-        box-sizing: border-box !important;
-        display: block !important;
+        padding-left: 25px !important;
+        margin-top: 8px !important;
+        margin-bottom: 8px !important;
+        list-style-position: outside !important;
     }
     
     #chat-messages .message .content li {
         display: list-item !important;
-        margin-bottom: 8px !important;
+        margin-bottom: 5px !important;
         margin-left: 5px !important;
         padding-left: 3px !important;
-        text-align: left !important;
-        width: calc(100% - 10px) !important;
-        white-space: normal !important;
-        overflow-wrap: break-word !important;
     }
     
-    #chat-messages .message .content ul li {
-        list-style-type: disc !important;
-    }
-    
-    #chat-messages .message .content ol li {
-        list-style-type: decimal !important;
-    }
-    
-    /* Đảm bảo không có thành phần bị overflow */
-    #chat-messages .content * {
-        max-width: 100%;
-        overflow-wrap: break-word;
+    /* Đảm bảo clearfix hoạt động đúng */
+    #chat-messages .clearfix {
+        clear: both;
+        height: 1px;
+        width: 100%;
+        display: block;
+        visibility: hidden;
     }
 `;
 document.head.appendChild(chatMessageStyle);
 
 // Khi trang tải xong, cập nhật trạng thái combined select
 window.addEventListener('DOMContentLoaded', function() {
-    // Clean up any conflicting styles
-    const chatMessages = document.getElementById('chat-messages');
-    if (chatMessages) {
-        chatMessages.style.float = 'none';
-        chatMessages.style.display = 'flex';
-        chatMessages.style.flexDirection = 'column';
-        
-        // Force all current messages to use the new style
-        const allMessages = chatMessages.querySelectorAll('.message');
-        allMessages.forEach(msg => {
-            msg.style.float = 'none';
-            msg.style.clear = 'both';
-            msg.style.width = '100%';
-            msg.style.display = 'flex';
-            msg.style.flexDirection = 'row';
-            
-            if (msg.classList.contains('user')) {
-                msg.style.justifyContent = 'flex-end';
-            } else if (msg.classList.contains('robot')) {
-                msg.style.justifyContent = 'flex-start';
-            }
-            
-            const content = msg.querySelector('.content');
-            if (content) {
-                content.style.maxWidth = '80%';
-                content.style.overflowWrap = 'break-word';
-            }
-        });
-    }
-    
-    // Đảm bảo cập nhật combined select sau khi voices đã load
+    // Đảm bảo voices được tải đầy đủ trước khi cập nhật UI
     setTimeout(() => {
+        // Đảm bảo cập nhật combined select sau khi voices đã load
         updateCombinedVoiceSelect();
         
         // Kiểm tra nếu đang sử dụng Web Speech API
