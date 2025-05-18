@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const cookieParser = require('cookie-parser');
 const virtualCharacterRoutes = require('./routes/virtualCharacterRoutes');
+const writingRoutes = require('./routes/writingRoutes');
 
 // Custom environment config loader
 // Modify loadConfig function
@@ -64,6 +65,7 @@ async function startServer() {
     app.use(express.json());
     app.use(express.urlencoded({ extended: false }));
     app.use(express.static('public'));
+    app.use('/', writingRoutes);  // Đặt trước các route khác
     app.use('/', jdRoutes);
     app.use('/', jobRoutes);
     app.use('/', algorithmRoutes);

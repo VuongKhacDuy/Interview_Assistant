@@ -1,0 +1,55 @@
+<%- include('partials/writing-header') %>
+
+<div class="container-fluid px-4">
+    <h2>Writing Practice</h2>
+
+    <div class="row d-flex">
+        <div class="col-md-4">
+            <div class="card mb-4 h-100">
+                <div class="card-header">
+                    <h5>Topic</h5>
+                </div>
+                <div class="card-body">
+                    <p id="topic"></p>
+                    <ul id="requirements"></ul>
+                    <h6>Suggested Keywords:</h6>
+                    <ul id="keywords"></ul>
+                    <h6>Writing Tips:</h6>
+                    <ul id="tips"></ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card mb-4 h-100">
+                <div class="card-header">
+                    <h5>Your Writing</h5>
+                    <div id="wordCount" class="text-muted"></div>
+                    <div id="timeStatus" class="text-muted">Nhấn "Bắt đầu" để làm bài</div>
+                    <div id="timeLeft" class="text-muted"></div>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <textarea id="writingContent" class="form-control flex-grow-1" disabled></textarea>
+                    <button id="startWriting" class="btn btn-success mt-3">Bắt đầu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button id="submitWriting" class="btn btn-primary">
+        <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true" id="submitSpinner"></span>
+        <span id="submitText">Nộp bài</span>
+    </button>
+
+    <div id="errorAlert" class="alert alert-danger mt-3 d-none">
+        <strong>Lỗi!</strong> <span id="errorMessage"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <div id="evaluation" class="mt-4" style="display: none;">
+        <h3>Evaluation</h3>
+        <div id="evaluationContent"></div>
+    </div>
+</div>
+
+<script src="/js/write-result.js"></script>

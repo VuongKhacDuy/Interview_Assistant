@@ -1,0 +1,125 @@
+<%- include('partials/header') %>
+
+<div class="container mt-4">
+    <h2>Luyện Viết Tiếng Anh</h2>
+    
+    <%- include('partials/api-key-form') %>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label class="form-label">Cấp độ</label>
+                <select class="form-select" id="level">
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="advanced">Advanced (IELTS 6.0+)</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label class="form-label">Loại bài thi</label>
+                <select class="form-select" id="examType">
+                    <option value="task2">IELTS Task 2 (Essay)</option>
+                </select>
+            </div>
+        </div>
+    
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label class="form-label">Chủ đề</label>
+                <select class="form-select" id="topicType">
+                    <option value="personal">Personal & Family (Cá nhân & Gia đình)</option>
+                    <option value="education">Education & Learning (Giáo dục & Học tập)</option>
+                    <option value="society">Society & Life (Xã hội & Cuộc sống)</option>
+                    <option value="environment">Environment & Nature (Môi trường & Thiên nhiên)</option>
+                    <option value="technology">Science & Technology (Khoa học & Công nghệ)</option>
+                    <option value="culture">Culture & Traditions (Văn hóa & Truyền thống)</option>
+                    <option value="travel">Travel & Tourism (Du lịch)</option>
+                    <option value="health">Health & Lifestyle (Sức khỏe & Lối sống)</option>
+                    <option value="work">Work & Career (Công việc & Nghề nghiệp)</option>
+                    <option value="media">Media & Entertainment (Truyền thông & Giải trí)</option>
+                </select>
+            </div>
+        </div>
+    
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label class="form-label">Thời gian làm bài</label>
+                <select class="form-select" id="timeLimit">
+                    <option value="40">40 phút (Task 2)</option>
+                </select>
+            </div>
+        </div>
+    
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label class="form-label">Số từ yêu cầu</label>
+                <select class="form-select" id="wordCount">
+                    <option value="250">Tối thiểu 250 từ (Task 2)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn btn-primary" id="generateTopic">
+        <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true" id="loadingSpinner"></span>
+        <span id="buttonText">Tạo Chủ Đề</span>
+    </button>
+</div>
+
+<script>
+document.getElementById('generateTopic').addEventListener('click', async () => {
+    const button = document.getElementById('generateTopic');
+    const spinner = document.getElementById('loadingSpinner');
+    const buttonText = document.getElementById('buttonText');
+
+    // Disable button and show loading
+    button.disabled = true;
+    spinner.classList.remove('d-none');
+    buttonText.textContent = 'Đang tạo chủ đề...';
+
+    const options = {
+        level: document.getElementById('level').value,
+        examType: document.getElementById('examType').value,
+        type: document.getElementById('topicType').value,
+        wordCount: document.getElementById('wordCount').value,
+        timeLimit: document.getElementById('timeLimit').value
+    };
+
+    try {
+        const response = await fetch('/writing-practice/generate-topic', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(options)
+        });
+
+        if (!response.ok) throw new Error('Failed to generate topic');
+        
+        const data = await response.json();
+        sessionStorage.setItem('writingTopic', JSON.stringify(data));
+        sessionStorage.setItem('writingOptions', JSON.stringify(options));
+        window.location.href = '/writing-practice/exercise';
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Không thể tạo chủ đề. Vui lòng thử lại.');
+        
+        // Reset button state
+        button.disabled = false;
+        spinner.classList.add('d-none');
+        buttonText.textContent = 'Tạo Chủ Đề';
+    }
+});
+
+// Thêm event listener để tự động cập nhật thời gian và số từ dựa trên loại bài
+document.getElementById('examType').addEventListener('change', (e) => {
+    const timeLimit = document.getElementById('timeLimit');
+    const wordCount = document.getElementById('wordCount');
+
+    timeLimit.value = '40';
+    wordCount.value = '250';
+});
+</script>
