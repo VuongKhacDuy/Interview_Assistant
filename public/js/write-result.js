@@ -35,15 +35,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Khởi tạo biến để kiểm tra trạng thái bài thi
     let isStarted = false;
 
-    // Thêm xử lý đếm từ
     function countWords(text) {
         return text.trim().split(/\s+/).filter(word => word.length > 0).length;
     }
 
-    // Cập nhật số từ khi người dùng nhập
     writingContent.addEventListener('input', () => {
         if (!isStarted) return;
         const words = countWords(writingContent.value);
@@ -51,26 +48,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function startExam() {
-        console.log('Starting exam...'); // Debug log
         if (isStarted) return;
         
         try {
             isStarted = true;
-            console.log('Enabling textarea...'); // Debug log
 
-            // Kích hoạt textarea
             writingContent.removeAttribute('disabled');
             writingContent.focus();
             writingContent.placeholder = "Bắt đầu viết bài của bạn...";
-            
-            // Ẩn nút bắt đầu
+
             startButton.style.display = 'none';
-            
-            // Hiển thị thời gian bắt đầu
             const startTime = new Date();
             timeStatus.textContent = `Bắt đầu lúc: ${startTime.toLocaleTimeString()}`;
             
-            // Khởi động đếm ngược
             timeLeft = parseInt(options.timeLimit) * 60;
             document.getElementById('wordCount').textContent = `Số từ: 0/${options.wordCount} từ yêu cầu`;
             
@@ -88,7 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
             timeLeftElement.textContent = 
                 `Thời gian còn lại: ${minutes} phút ${seconds.toString().padStart(2, '0')} giây`;
 
-            // Thêm cảnh báo khi gần hết giờ
             if (timeLeft <= 300) {
                 timeLeftElement.style.color = 'red';
                 if (timeLeft % 60 === 0) {
@@ -129,7 +118,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     
             const data = await response.json();
-            console.log('Server response:', data); // Log để debug
     
             if (!response.ok) {
                 throw new Error(`Lỗi HTTP: ${response.status}`);
@@ -139,10 +127,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(data.error || 'Không nhận được kết quả đánh giá từ server');
             }
     
-            // Ẩn thông báo lỗi
             errorAlert.classList.add('d-none');
     
-            // Kiểm tra và cập nhật an toàn
             const evaluation = data.evaluation;
             const evaluationDiv = document.getElementById('evaluation');
             if (evaluationDiv) {
@@ -151,7 +137,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
             evaluationDiv.style.display = 'block';
     
-            // Hàm cập nhật an toàn
             const safeUpdateElement = (id, value) => {
                 const element = document.getElementById(id);
                 if (element) {
@@ -159,7 +144,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             };
             
-            // Cập nhật điểm số và nhận xét
             safeUpdateElement('overallScore', evaluation.overallScore || 0);
             updateScoreChart(evaluation.overallScore || 0);
     
@@ -183,7 +167,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 safeUpdateElement('grammarComments', evaluation.grammaticalAccuracy.comments || '');
             }
     
-            // Cập nhật danh sách an toàn
             const safeUpdateList = (elementId, items = []) => {
                 const list = document.getElementById(elementId);
                 if (list) {
@@ -198,7 +181,6 @@ document.addEventListener('DOMContentLoaded', () => {
             safeUpdateElement('wordCountResult', evaluation.wordCount || 0);
             safeUpdateElement('detailedFeedback', evaluation.detailedFeedback || '');
     
-            // Lưu kết quả
             sessionStorage.setItem('writingResult', JSON.stringify(evaluation));
         } catch (error) {
             console.error('Error:', error);
@@ -214,7 +196,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Hàm hỗ trợ cập nhật danh sách
     function updateList(elementId, items) {
         const list = document.getElementById(elementId);
         list.innerHTML = items.map(item => `<li>${item}</li>`).join('');
@@ -250,7 +231,6 @@ let scoreChart = null;
 function updateScoreChart(score) {
     const ctx = document.getElementById('scoreChart').getContext('2d');
     
-    // Hủy biểu đồ cũ nếu tồn tại
     if (scoreChart) {
         scoreChart.destroy();
     }
@@ -261,8 +241,8 @@ function updateScoreChart(score) {
             datasets: [{
                 data: [score, 9 - score],
                 backgroundColor: [
-                    '#4CAF50',  // Màu cho phần điểm đạt được
-                    '#f0f0f0'   // Màu cho phần còn lại
+                    '#00f06c',
+                    '#c80006'
                 ],
                 borderWidth: 0
             }]
@@ -277,8 +257,39 @@ function updateScoreChart(score) {
                 },
                 tooltip: {
                     enabled: false
+                },
+                centerText: {
+                    display: true,
+                    text: `${score}/9`,
+                    color: '#000000',
+                    font: {
+                        size: '80px',
+                        family: 'Arial',
+                        weight: 'bold'
+                    }
                 }
             }
-        }
+        },
+        plugins: [{
+            id: 'centerText',
+            beforeDraw: function(chart) {
+                if (chart.config.options.plugins.centerText.display !== false) {
+                    const ctx = chart.ctx;
+                    const centerConfig = chart.config.options.plugins.centerText;
+
+                    ctx.save();
+                    const centerX = (chart.chartArea.left + chart.chartArea.right) / 2;
+                    const centerY = (chart.chartArea.top + chart.chartArea.bottom) / 2;
+
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.font = `${centerConfig.font.weight} ${centerConfig.font.size} ${centerConfig.font.family}`;
+                    ctx.fillStyle = centerConfig.color;
+
+                    ctx.fillText(centerConfig.text, centerX, centerY);
+                    ctx.restore();
+                }
+            }
+        }]
     });
 }

@@ -45,7 +45,7 @@ class WritingController {
             console.log("<><><>< 444 Evaluation sc result:", result);
             
             if (!result || !result.evaluation) {
-                return res.status(500).json({ error: '><<>< 3 No evaluation result received' });
+                return res.status(500).json({ error: 'No evaluation result received' });
             }
 
             return res.json({
@@ -53,8 +53,7 @@ class WritingController {
                 evaluation: result.evaluation
             });
         } catch (error) {
-            console.error('<><><>><> 555 Error evaluating writing:', error);
-            return res.status(500).json({ error: '666 Failed to evaluate writing' });
+            return res.status(500).json({ error: 'Failed to evaluate writing' });
         }
     }
 }
