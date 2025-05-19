@@ -22,7 +22,11 @@ class AIService {
     async generateContent(prompt) {
         try {
             const result = await this.model.generateContent(prompt);
-            const rawMarkdown = result?.response?.candidates?.[0]?.content?.parts?.map(part => part.text).join('') || 'No response from AI.';
+            let rawMarkdown = result?.response?.candidates?.[0]?.content?.parts?.map(part => part.text).join('') || 'No response from AI.';
+            
+            // Xử lý các đoạn văn được đánh dấu [A], [B],...
+            rawMarkdown = rawMarkdown.replace(/\[([A-Z])\]/g, '\n\n**[$1]**\n');
+            
             return marked(rawMarkdown);
         } catch (error) {
             // Add retry logic for 503 errors
@@ -779,7 +783,7 @@ async generateOptimizedCV(cvContent, jdText) {
                - Thân bài (Body paragraphs)
                - Kết luận (Conclusion)
                các đoạn phải được phân cách rõ ràng
-            3. Đánh dấu từng câu bằng số thứ tự [1], [2], [3]...
+            3. - Đánh dấu từng câu bằng số thứ tự [1], [2], [3]...
             4. Mỗi câu đi kèm:
                - Gợi ý cách viết bằng tiếng Anh
                - Từ vựng học thuật phù hợp với IELTS
@@ -818,7 +822,6 @@ async generateOptimizedCV(cvContent, jdText) {
                - Gợi ý thêm các cấu trúc ngữ pháp nâng cao
             3. Đối với bài viết dài hơn 1 đoạn:
                - Phân chia thành các đoạn với tiêu đề
-               - Đánh dấu từng đoạn bằng số thứ tự [A], [B], [C]...
                - Mỗi đoạn đi kèm gợi ý cách viết và từ vựng phù hợp
             4. Trả về một đối tượng JSON với cấu trúc sau:
             {
