@@ -1,0 +1,147 @@
+<%- include('partials/header') %>
+
+<div class="container-fluid mt-4">
+    <h2>Tập viết theo mẫu</h2>
+    
+    <div class="row">
+        <!-- Cột hiển thị đoạn văn mẫu -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Đoạn văn mẫu</h5>
+                </div>
+                <div class="card-body">
+                    <div id="templateContent">
+                        <!-- Đoạn văn sẽ được hiển thị ở đây -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cột nhập văn bản -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Viết bài của bạn</h5>
+                </div>
+                <div class="card-body">
+                    <textarea id="userInput" class="form-control" rows="10" placeholder="Nhập bài viết của bạn tại đây..."></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card gợi ý -->
+    <div class="row">
+        <div class="col-md-4">
+            <div id="sentenceDetails" class="card d-none mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Gợi ý cách viết</h5>
+                    <p id="sentenceSuggestion" class="card-text"></p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div id="grammarDetails" class="card d-none mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Gợi ý ngữ pháp</h5>
+                    <p id="grammarSuggestion" class="card-text"></p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div id="vocabularyDetails" class="card d-none mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Gợi ý từ vựng</h5>
+                    <p id="vocabularySuggestion" class="card-text"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-12">
+            <button class="btn btn-primary me-2" onclick="window.location.href='/writing-practice'">
+                Quay lại
+            </button>
+            <button class="btn btn-success" id="submitWriting">
+                Nộp bài
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const template = JSON.parse(sessionStorage.getItem('writingTemplate'));
+    const templateContent = document.getElementById('templateContent');
+    const sentenceDetails = document.getElementById('sentenceDetails');
+    const grammarDetails = document.getElementById('grammarDetails');
+    const vocabularyDetails = document.getElementById('vocabularyDetails');
+    const sentenceSuggestion = document.getElementById('sentenceSuggestion');
+    const grammarSuggestion = document.getElementById('grammarSuggestion');
+    const vocabularySuggestion = document.getElementById('vocabularySuggestion');
+
+    if (template && template.text) {
+        const sentences = template.sentences;
+        templateContent.innerHTML = template.text.split('.').map((sentence, index) => {
+            if (sentence.trim()) {
+                return `<span class="sentence" data-index="${index}">${sentence.trim()}.</span> `;
+            }
+            return '';
+        }).join('');
+        
+        document.querySelectorAll('.sentence').forEach((element, index) => {
+            element.style.cursor = 'pointer';
+            element.addEventListener('click', () => {
+                if (sentences[index]) {
+                    sentenceSuggestion.textContent = sentences[index].suggestion;
+                    grammarSuggestion.textContent = sentences[index].grammar || 'Không có gợi ý ngữ pháp cho câu này';
+                    vocabularySuggestion.textContent = sentences[index].vocabulary || 'Không có gợi ý từ vựng cho câu này';
+                    
+                    sentenceDetails.classList.remove('d-none');
+                    grammarDetails.classList.remove('d-none');
+                    vocabularyDetails.classList.remove('d-none');
+                }
+            });
+        });
+    }
+
+    // Xử lý nút nộp bài
+    document.getElementById('submitWriting').addEventListener('click', function() {
+        const userInput = document.getElementById('userInput').value;
+        if (!userInput.trim()) {
+            alert('Vui lòng nhập bài viết của bạn trước khi nộp!');
+            return;
+        }
+        // TODO: Thêm logic xử lý nộp bài ở đây
+    });
+});
+</script>
+
+<style>
+.sentence:hover {
+    background-color: #37be86;
+}
+
+.card {
+    height: 100%;
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+#templateContent {
+    font-size: 1.1em;
+    line-height: 1.6;
+}
+
+#userInput {
+    font-size: 1.1em;
+    line-height: 1.6;
+    resize: vertical;
+}
+</style>

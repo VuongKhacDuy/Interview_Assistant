@@ -1,0 +1,116 @@
+<div class="row">
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label class="form-label">Chọn mẫu bài luyện tập</label>
+            <select class="form-select" id="templateType">
+                <option value="short_paragraph">Đoạn văn ngắn</option>
+                <option value="children_story">Truyện ngắn cho trẻ em</option>
+                <option value="ielts_paragraph">IELTS task 2</option>
+                <option value="diary">Nhật ký hàng ngày</option>
+                <option value="letter">Thư thân mật</option>
+            </select>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label class="form-label" id="levelLabel">Cấp độ</label>
+            <select class="form-select" id="difficultyLevel">
+                <option value="easy">Dễ</option>
+                <option value="medium">Trung bình</option>
+                <option value="hard">Khó</option>
+            </select>
+            <select class="form-select d-none" id="ieltsLevel">
+                <option value="5.5 - 6.0">Band 5.0-Band 6.0</option>
+                <option value="6.0 - 6.5">Band 6.0-Band 6.5</option>
+                <option value="6.5 - 7.5">Band 6.5-Band 7.5</option>
+                <option value="7.5 - 8.5">Band 7.5-Band 8.5</option>
+                <option value="8.5 - 9.0">Band 8.5-Band 9.0</option>
+            </select>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label class="form-label">Chủ đề</label>
+            <select class="form-select" id="topicType">
+                <option value="personal">Cá nhân</option>
+                <option value="family">Gia đình</option>
+                <option value="education">Học tập</option>
+                <option value="teaching">Giáo dục</option>
+                <option value="science">Khoa học</option>
+                <option value="research">Nghiên cứu</option>
+                <option value="environment">Môi trường</option>
+                <option value="culture">Văn hóa</option>
+                <option value="society">Xã hội</option>
+                <option value="technology">Công nghệ</option>
+                <option value="health">Sức khỏe</option>
+                <option value="sports">Thể thao</option>
+            </select>
+        </div>
+    </div>
+</div>
+<button class="btn btn-primary" id="generateTemplate">
+    <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true" id="templateSpinner"></span>
+    <span id="templateButtonText">Tạo mẫu câu</span>
+</button>
+
+<script>
+document.getElementById('templateType').addEventListener('change', function() {
+    const difficultyLevel = document.getElementById('difficultyLevel');
+    const ieltsLevel = document.getElementById('ieltsLevel');
+    const levelLabel = document.getElementById('levelLabel');
+
+    if (this.value === 'ielts_paragraph') {
+        difficultyLevel.classList.add('d-none');
+        ieltsLevel.classList.remove('d-none');
+        levelLabel.textContent = 'Band điểm mục tiêu';
+    } else {
+        difficultyLevel.classList.remove('d-none');
+        ieltsLevel.classList.add('d-none');
+        levelLabel.textContent = 'Cấp độ';
+    }
+});
+
+document.getElementById('generateTemplate').addEventListener('click', async () => {
+    const button = document.getElementById('generateTemplate');
+    const spinner = document.getElementById('templateSpinner');
+    const buttonText = document.getElementById('templateButtonText');
+    const templateType = document.getElementById('templateType').value;
+
+    button.disabled = true;
+    spinner.classList.remove('d-none');
+    buttonText.textContent = 'Đang tạo mẫu câu...';
+
+    const options = {
+        type: templateType,
+        difficulty: templateType === 'ielts_paragraph' 
+            ? document.getElementById('ieltsLevel').value 
+            : document.getElementById('difficultyLevel').value,
+        topic: document.getElementById('topicType').value
+    };
+
+    try {
+        const response = await fetch('/writing-practice/generate-template', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(options)
+        });
+
+        if (!response.ok) throw new Error('Failed to generate template');
+        
+        const data = await response.json();
+        sessionStorage.setItem('writingTemplate', JSON.stringify(data));
+        sessionStorage.setItem('templateOptions', JSON.stringify(options));
+        window.location.href = '/writing-practice/template';
+    } catch (error) {
+        console.log('2 Không thể tạo mẫu câu. Vui lòng thử lại.');
+        console.error('Error:', error);
+        alert('2 Không thể tạo mẫu câu. Vui lòng thử lại.');
+        
+        button.disabled = false;
+        spinner.classList.add('d-none');
+        buttonText.textContent = 'Tạo mẫu câu';
+    }
+});
+</script>

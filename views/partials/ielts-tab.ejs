@@ -1,0 +1,39 @@
+<div class="row">
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label class="form-label">Chủ đề</label>
+            <select class="form-select" id="topicType">
+                <option value="personal">Personal & Family (Cá nhân & Gia đình)</option>
+                <option value="education">Education & Learning (Giáo dục & Học tập)</option>
+                <option value="society">Society & Life (Xã hội & Cuộc sống)</option>
+                <option value="environment">Environment & Nature (Môi trường & Thiên nhiên)</option>
+                <option value="technology">Science & Technology (Khoa học & Công nghệ)</option>
+                <option value="culture">Culture & Traditions (Văn hóa & Truyền thống)</option>
+                <option value="travel">Travel & Tourism (Du lịch)</option>
+                <option value="health">Health & Lifestyle (Sức khỏe & Lối sống)</option>
+                <option value="work">Work & Career (Công việc & Nghề nghiệp)</option>
+                <option value="media">Media & Entertainment (Truyền thông & Giải trí)</option>
+            </select>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label class="form-label">Thời gian làm bài</label>
+            <select class="form-select" id="timeLimit">
+                <option value="40">40 phút (Task 2)</option>
+            </select>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label class="form-label">Số từ yêu cầu</label>
+            <select class="form-select" id="wordCount">
+                <option value="250">Tối thiểu 250 từ (Task 2)</option>
+            </select>
+        </div>
+    </div>
+</div>
+<button class="btn btn-primary" id="generateTopic">
+    <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true" id="loadingSpinner"></span>
+    <span id="buttonText">Tạo chủ đề</span>
+</button>

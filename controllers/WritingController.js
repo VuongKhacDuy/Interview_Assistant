@@ -56,6 +56,23 @@ class WritingController {
             return res.status(500).json({ error: 'Failed to evaluate writing' });
         }
     }
+
+    static async generateTemplate(req, res) {
+        try {
+            const apiKey = req.cookies?.apiKey;
+            if (!apiKey) {
+                return res.status(401).json({ error: 'API key is required' });
+            }
+
+            const options = req.body;
+            const aiService = new AIService(apiKey);
+            const template = await aiService.generateTemplate(options);
+            res.json(template);
+        } catch (error) {
+            console.error('Error generating template:', error);
+            res.status(500).json({ error: 'Failed to generate template' });
+        }
+    }
 }
 
 module.exports = WritingController;

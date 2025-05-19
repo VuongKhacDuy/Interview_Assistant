@@ -761,6 +761,87 @@ async generateOptimizedCV(cvContent, jdText) {
             };
         }
     }
+
+    async generateTemplate(options) {
+        const { type, difficulty, topic } = options;
+        
+        let prompt;
+        if (type === 'ielts_paragraph') {
+            prompt = `Tạo mẫu bài viết IELTS Task 2 bằng tiếng Việt theo yêu cầu sau:
+    
+            Band điểm: ${difficulty}
+            Chủ đề: ${topic}
+        
+            Yêu cầu:
+            1. Tạo một bài luận IELTS Task 2 hoàn chỉnh với ít nhất 250 từ
+            2. Bài luận phải theo cấu trúc chuẩn IELTS Task 2:
+               - Mở bài (Introduction)
+               - Thân bài (Body paragraphs)
+               - Kết luận (Conclusion)
+               các đoạn phải được phân cách rõ ràng
+            3. Đánh dấu từng câu bằng số thứ tự [1], [2], [3]...
+            4. Mỗi câu đi kèm:
+               - Gợi ý cách viết bằng tiếng Anh
+               - Từ vựng học thuật phù hợp với IELTS
+               - Cấu trúc ngữ pháp nâng cao
+            5. Trả về một đối tượng JSON với cấu trúc sau:
+            {
+                "text": "bài luận hoàn chỉnh",
+                "wordCount": "số từ trong bài",
+                "structure": {
+                    "introduction": "đoạn mở bài",
+                    "bodyParagraphs": ["thân bài 1", "thân bài 2"],
+                    "conclusion": "đoạn kết luận"
+                },
+                "sentences": [
+                    {
+                        "original": "câu gốc",
+                        "suggestion": "gợi ý cách viết bằng tiếng Anh",
+                        "vocabulary": ["từ vựng học thuật"],
+                        "grammar": "cấu trúc ngữ pháp sử dụng"
+                    }
+                ]
+            }`;
+        } else {
+            prompt = `Tạo mẫu bài viết bằng tiếng Việt theo yêu cầu sau:
+        
+            Loại bài viết: ${type}
+            Cấp độ: ${difficulty}
+            Chủ đề: ${topic}
+        
+            Yêu cầu:
+            1. Tạo một mẫu bài viết phù hợp với loại bài, cấp độ và chủ đề đã chọn
+            2. Đối với mỗi câu trong bài viết:
+               - Đánh dấu từng câu bằng số thứ tự [1], [2], [3]...
+               - Mỗi câu đi kèm gợi ý cách viết và từ vựng phù hợp
+               - Gợi ý thêm các từ vựng học thuật
+               - Gợi ý thêm các cấu trúc ngữ pháp nâng cao
+            3. Đối với bài viết dài hơn 1 đoạn:
+               - Phân chia thành các đoạn với tiêu đề
+               - Đánh dấu từng đoạn bằng số thứ tự [A], [B], [C]...
+               - Mỗi đoạn đi kèm gợi ý cách viết và từ vựng phù hợp
+            4. Trả về một đối tượng JSON với cấu trúc sau:
+            {
+                "text": "đoạn văn hoàn chỉnh",
+                "sentences": [
+                    {
+                        "original": "câu gốc",
+                        "suggestion": "gợi ý cách viết bằng tiếng Anh"
+                    }
+                ]
+            }`;
+        }
+
+        try {
+            const result = await this.model.generateContent(prompt);
+            const response = result?.response?.candidates?.[0]?.content?.parts?.[0]?.text;
+            const cleanJson = response.replace(/```json\s*|\s*```/g, '').trim();
+            return JSON.parse(cleanJson);
+        } catch (error) {
+            console.error('Error generating template:', error);
+            throw error;
+        }
+    }
 }
 
 module.exports = AIService;
