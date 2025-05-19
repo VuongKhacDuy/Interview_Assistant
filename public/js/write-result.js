@@ -115,55 +115,109 @@ document.addEventListener('DOMContentLoaded', () => {
         const content = document.getElementById('writingContent').value;
     
         try {
+            // Disable UI elements
             submitButton.disabled = true;
             submitSpinner.classList.remove('d-none');
             submitText.textContent = 'Đang đánh giá...';
             errorAlert.classList.add('d-none');
+            writingContent.disabled = true;
     
             const response = await fetch('/writing-practice/evaluate', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    topic: topicData.topic,
-                    content,
-                    options
-                })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ topic: topicData.topic, content, options })
             });
     
-            if (!response.ok) throw new Error('Không thể kết nối đến server');
-            
             const data = await response.json();
-            console.log('<>><> Server response:', data);
-            if (data.success && data.evaluation) {
-                document.getElementById('evaluation').style.display = 'block';
-                // Parse và hiển thị kết quả đánh giá
-                if (typeof data.evaluation === 'string') {
-                    // Nếu evaluation là HTML string
-                    document.getElementById('evaluationContent').innerHTML = data.evaluation;
-                } else {
-                    // Nếu evaluation là object, hiển thị lỗi
-                    console.error('Invalid evaluation format:', data.evaluation);
-                    throw new Error('Định dạng đánh giá không hợp lệ');
-                }
-            } else {
-                throw new Error('Không nhận được kết quả đánh giá từ server');
+            console.log('Server response:', data); // Log để debug
+    
+            if (!response.ok) {
+                throw new Error(`Lỗi HTTP: ${response.status}`);
             }
+    
+            if (!data.success || !data.evaluation) {
+                throw new Error(data.error || 'Không nhận được kết quả đánh giá từ server');
+            }
+    
+            // Ẩn thông báo lỗi
+            errorAlert.classList.add('d-none');
+    
+            // Kiểm tra và cập nhật an toàn
+            const evaluation = data.evaluation;
+            const evaluationDiv = document.getElementById('evaluation');
+            if (evaluationDiv) {
+                evaluationDiv.style.display = 'none';
+            }
+    
+            evaluationDiv.style.display = 'block';
+    
+            // Hàm cập nhật an toàn
+            const safeUpdateElement = (id, value) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = value;
+                }
+            };
+            
+            // Cập nhật điểm số và nhận xét
+            safeUpdateElement('overallScore', evaluation.overallScore || 0);
+            updateScoreChart(evaluation.overallScore || 0);
+    
+            if (evaluation.taskAchievement) {
+                safeUpdateElement('taskScore', evaluation.taskAchievement.score || 0);
+                safeUpdateElement('taskComments', evaluation.taskAchievement.comments || '');
+            }
+    
+            if (evaluation.coherenceAndCohesion) {
+                safeUpdateElement('coherenceScore', evaluation.coherenceAndCohesion.score || 0);
+                safeUpdateElement('coherenceComments', evaluation.coherenceAndCohesion.comments || '');
+            }
+    
+            if (evaluation.lexicalResource) {
+                safeUpdateElement('lexicalScore', evaluation.lexicalResource.score || 0);
+                safeUpdateElement('lexicalComments', evaluation.lexicalResource.comments || '');
+            }
+    
+            if (evaluation.grammaticalAccuracy) {
+                safeUpdateElement('grammarScore', evaluation.grammaticalAccuracy.score || 0);
+                safeUpdateElement('grammarComments', evaluation.grammaticalAccuracy.comments || '');
+            }
+    
+            // Cập nhật danh sách an toàn
+            const safeUpdateList = (elementId, items = []) => {
+                const list = document.getElementById(elementId);
+                if (list) {
+                    list.innerHTML = items.map(item => `<li>${item}</li>`).join('');
+                }
+            };
+    
+            safeUpdateList('strengthsList', evaluation.strengths);
+            safeUpdateList('weaknessesList', evaluation.weaknesses);
+            safeUpdateList('suggestionsList', evaluation.suggestions);
+    
+            safeUpdateElement('wordCountResult', evaluation.wordCount || 0);
+            safeUpdateElement('detailedFeedback', evaluation.detailedFeedback || '');
+    
+            // Lưu kết quả
+            sessionStorage.setItem('writingResult', JSON.stringify(evaluation));
         } catch (error) {
             console.error('Error:', error);
-            errorMessage.textContent = '1111 Không thể đánh giá bài viết. Vui lòng thử lại sau.';
+            document.getElementById('evaluation').style.display = 'none';
+            errorMessage.textContent = error.message || 'Không thể đánh giá bài viết. Vui lòng thử lại sau.';
             errorAlert.classList.remove('d-none');
-            
-            // Cho phép người dùng tiếp tục chỉnh sửa
             writingContent.disabled = false;
             isStarted = true;
         } finally {
-            // Reset trạng thái nút submit
             submitButton.disabled = false;
             submitSpinner.classList.add('d-none');
             submitText.textContent = 'Nộp bài';
         }
+    }
+
+    // Hàm hỗ trợ cập nhật danh sách
+    function updateList(elementId, items) {
+        const list = document.getElementById(elementId);
+        list.innerHTML = items.map(item => `<li>${item}</li>`).join('');
     }
 
     // Event Listeners
@@ -190,3 +244,41 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize the page
     initializeTopicData();
 });
+
+let scoreChart = null;
+
+function updateScoreChart(score) {
+    const ctx = document.getElementById('scoreChart').getContext('2d');
+    
+    // Hủy biểu đồ cũ nếu tồn tại
+    if (scoreChart) {
+        scoreChart.destroy();
+    }
+    
+    scoreChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [score, 9 - score],
+                backgroundColor: [
+                    '#4CAF50',  // Màu cho phần điểm đạt được
+                    '#f0f0f0'   // Màu cho phần còn lại
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            cutout: '70%',
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    enabled: false
+                }
+            }
+        }
+    });
+}

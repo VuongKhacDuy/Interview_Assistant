@@ -42,14 +42,59 @@
     </button>
 
     <div id="errorAlert" class="alert alert-danger mt-3 d-none">
-        <strong>Lỗi!</strong> <span id="errorMessage"></span>
+        <strong>Lỗi!</strong> <span id="errorMessageEvaluateWritting"></span>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 
     <div id="evaluation" class="mt-4" style="display: none;">
         <h3>Evaluation</h3>
-        <div id="evaluationContent"></div>
+        <div id="evaluationContent">
+            <div class="evaluation-result">
+                <div class="row align-items-center">
+                    <div class="col-md-4">
+                        <canvas id="scoreChart" width="200" height="200"></canvas>
+                    </div>
+                    <div class="col-md-8">
+                        <h4>Điểm tổng thể: <span id="overallScore"></span>/9</h4>
+                    </div>
+                </div>
+                
+                <h5>Chi tiết đánh giá:</h5>
+                <ul>
+                    <li>
+                        <strong>Task Achievement:</strong> <span id="taskScore"></span>/9
+                        <p id="taskComments"></p>
+                    </li>
+                    <li>
+                        <strong>Coherence & Cohesion:</strong> <span id="coherenceScore"></span>/9
+                        <p id="coherenceComments"></p>
+                    </li>
+                    <li>
+                        <strong>Lexical Resource:</strong> <span id="lexicalScore"></span>/9
+                        <p id="lexicalComments"></p>
+                    </li>
+                    <li>
+                        <strong>Grammatical Accuracy:</strong> <span id="grammarScore"></span>/9
+                        <p id="grammarComments"></p>
+                    </li>
+                </ul>
+                
+                <h5>Điểm mạnh:</h5>
+                <ul id="strengthsList"></ul>
+                
+                <h5>Điểm yếu:</h5>
+                <ul id="weaknessesList"></ul>
+                
+                <h5>Đề xuất cải thiện:</h5>
+                <ul id="suggestionsList"></ul>
+                
+                <p><strong>Số từ:</strong> <span id="wordCountResult"></span></p>
+                <h5>Nhận xét chi tiết:</h5>
+                <p id="detailedFeedback"></p>
+            </div>
+        </div>
     </div>
 </div>
 
 <script src="/js/write-result.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

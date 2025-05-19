@@ -685,8 +685,7 @@ async generateOptimizedCV(cvContent, jdText) {
     }
 
     async generateWritingTopic(options) {
-        const prompt = `Generate a writing topic based on the following parameters:
-        Level: ${options.level}
+        const prompt = `Generate a writing topic for Ielts task 2 examinations based on the following parameters:
         Type: ${options.type}
         Word Count: ${options.wordCount}
         Time Limit: ${options.timeLimit} minutes
@@ -750,7 +749,6 @@ async generateOptimizedCV(cvContent, jdText) {
             const jsonMatch = responseText.match(/\{[\s\S]*\}/);
             const jsonString = jsonMatch ? jsonMatch[0] : responseText;
             const evaluation = JSON.parse(jsonString);
-
             return {
                 success: true,
                 evaluation: evaluation
@@ -763,65 +761,6 @@ async generateOptimizedCV(cvContent, jdText) {
             };
         }
     }
-    
-    // // Helper method to format the evaluation as HTML
-    // formatEvaluationWritingHtml(evaluation) {
-    //     return `
-    //         <div class="evaluation-result">
-    //             <h4>Điểm tổng quát: ${evaluation.overallScore}/10</h4>
-                
-    //             <div class="task-achievement">
-    //                 <h5>Hoàn thành nhiệm vụ (${evaluation.taskAchievement.score}/10)</h5>
-    //                 <p>${evaluation.taskAchievement.comments}</p>
-    //             </div>
-    
-    //             <div class="coherence-cohesion">
-    //                 <h5>Mạch lạc và liên kết (${evaluation.coherenceAndCohesion.score}/10)</h5>
-    //                 <p>${evaluation.coherenceAndCohesion.comments}</p>
-    //             </div>
-    
-    //             <div class="lexical-resource">
-    //                 <h5>Từ vựng (${evaluation.lexicalResource.score}/10)</h5>
-    //                 <p>${evaluation.lexicalResource.comments}</p>
-    //             </div>
-    
-    //             <div class="grammatical-accuracy">
-    //                 <h5>Ngữ pháp (${evaluation.grammaticalAccuracy.score}/10)</h5>
-    //                 <p>${evaluation.grammaticalAccuracy.comments}</p>
-    //             </div>
-    
-    //             <div class="strengths">
-    //                 <h5>Điểm mạnh:</h5>
-    //                 <ul>
-    //                     ${evaluation.strengths.map(s => `<li>${s}</li>`).join('')}
-    //                 </ul>
-    //             </div>
-    
-    //             <div class="weaknesses">
-    //                 <h5>Điểm cần cải thiện:</h5>
-    //                 <ul>
-    //                     ${evaluation.weaknesses.map(w => `<li>${w}</li>`).join('')}
-    //                 </ul>
-    //             </div>
-    
-    //             <div class="suggestions">
-    //                 <h5>Đề xuất cải thiện:</h5>
-    //                 <ul>
-    //                     ${evaluation.suggestions.map(s => `<li>${s}</li>`).join('')}
-    //                 </ul>
-    //             </div>
-    
-    //             <div class="word-count">
-    //                 <p>Số từ: ${evaluation.wordCount}</p>
-    //             </div>
-    
-    //             <div class="detailed-feedback">
-    //                 <h5>Phản hồi chi tiết:</h5>
-    //                 <p>${evaluation.detailedFeedback}</p>
-    //             </div>
-    //         </div>
-    //     `;
-    // }
 }
 
 module.exports = AIService;

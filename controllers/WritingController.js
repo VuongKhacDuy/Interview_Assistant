@@ -40,11 +40,21 @@ class WritingController {
 
             const { topic, content, options } = req.body;
             const aiService = new AIService(apiKey);
-            const evaluation = await aiService.evaluateWriting(topic, content, options);
-            res.json({ evaluation });
+            const result = await aiService.evaluateWriting(topic, content, options);
+            
+            console.log("<><><>< 444 Evaluation sc result:", result);
+            
+            if (!result || !result.evaluation) {
+                return res.status(500).json({ error: '><<>< 3 No evaluation result received' });
+            }
+
+            return res.json({
+                success: true,
+                evaluation: result.evaluation
+            });
         } catch (error) {
-            console.error('Error evaluating writing:', error);
-            res.status(500).json({ error: 'Failed to evaluate writing' });
+            console.error('<><><>><> 555 Error evaluating writing:', error);
+            return res.status(500).json({ error: '666 Failed to evaluate writing' });
         }
     }
 }
