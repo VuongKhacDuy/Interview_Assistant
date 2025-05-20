@@ -30,6 +30,4 @@ router.get('/writing-practice/template', (req, res) => {
 
 router.post('/writing-practice/generate-template', WritingController.generateTemplate);
 
-router.get('/writing-practice/result', WritingController.renderWriteResult);
-
 module.exports = router;

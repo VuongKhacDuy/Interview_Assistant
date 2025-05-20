@@ -715,7 +715,6 @@ async generateOptimizedCV(cvContent, jdText) {
     }
     
     async evaluateWriting(topic, content, options) {
-        
         const prompt = `Bạn là giáo viên chấm thi IELTS Writing. Hãy đánh giá bài viết sau và trả về kết quả dưới dạng JSON với cấu trúc sau:
         {
             "overallScore": number,
@@ -739,7 +738,16 @@ async generateOptimizedCV(cvContent, jdText) {
             "weaknesses": [string],
             "suggestions": [string],
             "wordCount": number,
-            "detailedFeedback": string
+            "detailedFeedback": string,
+            "suggestedImproveWords": [string],
+            "suggestedImproveSentences": [string],
+            "suggestedSymnonyms": [string],
+            "suggestedAntonyms": [string],
+            "wrongWords": [string],
+            "wrongSentences": [string],
+            "explanationsWrongSentences": [string],
+            "wayToFixWrongSentences": [string],
+            "suggestedImproveGrammar": [string]
         }
     
         Chủ đề: ${topic}
@@ -818,7 +826,7 @@ async generateOptimizedCV(cvContent, jdText) {
             2. Đối với mỗi câu trong bài viết:
                - Đánh dấu từng câu bằng số thứ tự [1], [2], [3]...
                - Mỗi câu đi kèm gợi ý cách viết và từ vựng phù hợp
-               - Gợi ý thêm các từ vựng học thuật
+               - Gợi ý thêm các từ vựng học thuật và nghĩa tiếng việt
                - Gợi ý thêm các cấu trúc ngữ pháp nâng cao
             3. Đối với bài viết dài hơn 1 đoạn:
                - Phân chia thành các đoạn với tiêu đề

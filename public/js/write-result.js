@@ -180,6 +180,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
             safeUpdateElement('wordCountResult', evaluation.wordCount || 0);
             safeUpdateElement('detailedFeedback', evaluation.detailedFeedback || '');
+
+            safeUpdateList('improveWordsList', evaluation.suggestedImproveWords);
+            safeUpdateList('improveSentencesList', evaluation.suggestedImproveSentences);
+            safeUpdateList('improveParagraphsList', evaluation.suggestedImproveParagraphs);
+            safeUpdateList('synonymsList', evaluation.suggestedSymnonyms);
+            safeUpdateList('antonymsList', evaluation.suggestedAntonyms);
     
             sessionStorage.setItem('writingResult', JSON.stringify(evaluation));
         } catch (error) {

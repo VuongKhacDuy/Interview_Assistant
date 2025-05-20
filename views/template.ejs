@@ -115,6 +115,12 @@
     line-height: 1.6;
 }
 
+.topic-sentence {
+    font-weight: bold;
+    margin-bottom: 1em;
+    color: #2c3e50;
+}
+
 #templateContent p {
     margin-bottom: 1.5em;
     text-align: justify;
@@ -153,15 +159,32 @@ document.addEventListener('DOMContentLoaded', function() {
     const grammarSuggestion = document.getElementById('grammarSuggestion');
     const vocabularySuggestion = document.getElementById('vocabularySuggestion');
 
+    console.log("1 templateContent: ", templateContent);
+
     if (template && template.text) {
         const sentences = template.sentences;
-        templateContent.innerHTML = template.text.split('.').map((sentence, index) => {
-            if (sentence.trim()) {
-                return `<span class="sentence" data-index="${index}">${sentence.trim()}.</span> `;
-            }
-            return '';
-        }).join('');
+        console.log("1 sentences: ", sentences);
         
+        // Tách văn bản thành các câu
+        const allSentences = template.text.split(/(?<=[.!])/g).map(s => s.trim()).filter(Boolean);
+        
+        // Kiểm tra câu đầu tiên
+        let topicSentence = '';
+        let remainingSentences = allSentences;
+        
+        if (allSentences[0] && allSentences[0].includes('Chủ đề')) {
+            topicSentence = allSentences[0];
+            remainingSentences = allSentences.slice(1);
+        }
+        
+        // Tạo HTML
+        templateContent.innerHTML = `
+            ${topicSentence ? `<div class="topic-sentence">${topicSentence}</div>` : ''}
+            ${remainingSentences.map((sentence, index) => 
+                `<span class="sentence" data-index="${index}">${sentence}</span> `
+            ).join('')}
+        `;
+
         document.querySelectorAll('.sentence').forEach((element, index) => {
             element.style.cursor = 'pointer';
             element.addEventListener('click', () => {
@@ -261,9 +284,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-md-4">
+                                    <div class="col-md-2">
                                         <div class="text-center">
-                                            <canvas id="overallScoreChart" width="170" height="170"></canvas>
+                                            <canvas id="overallScoreChart" width="150" height="150"></canvas>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
@@ -300,6 +323,42 @@ document.addEventListener('DOMContentLoaded', function() {
                                         ${result.evaluation.suggestions.map(s => `<li>${s}</li>`).join('')}
                                     </ul>
                                 </div>
+                                <div class="mt-3">
+                                    <h6>Gợi ý cải thiện từ vựng:</h6>
+                                    <ul>
+                                        ${result.evaluation.suggestedImproveWords.map(w => `<li>${w}</li>`).join('')}
+                                    </ul>
+                                </div>
+                                <div class="mt-3">
+                                    <h6>Gợi ý cải thiện câu:</h6>
+                                    <ul>
+                                        ${result.evaluation.suggestedImproveSentences.map(s => `<li>${s}</li>`).join('')}
+                                    </ul>
+                                </div>
+                                <div class="mt-3">
+                                    <h6>Từ đồng nghĩa gợi ý:</h6>
+                                    <ul>
+                                        ${result.evaluation.suggestedSymnonyms.map(s => `<li>${s}</li>`).join('')}
+                                    </ul>
+                                </div>
+                                <div class="mt-3">
+                                    <h6>Từ trái nghĩa gợi ý:</h6>
+                                    <ul>
+                                        ${result.evaluation.suggestedAntonyms.map(a => `<li>${a}</li>`).join('')}
+                                    </ul>
+                                </div>
+                                <div class="mt-3">
+                                    <h6>Wrong words:</h6>
+                                    <ul>
+                                        ${result.evaluation.wrongWords.map(s => `<li>${s}</li>`).join('')}
+                                    </ul>
+                                </div>
+                                <div class="mt-3">
+                                    <h6>Wrong sentences:</h6>
+                                    <ul>
+                                        ${result.evaluation.wrongSentences.map(s => `<li>${s}</li>`).join('')}
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -313,7 +372,6 @@ document.addEventListener('DOMContentLoaded', function() {
             // Tạo pie chart cho overall score
             const ctx = document.getElementById('overallScoreChart').getContext('2d');
             
-            // Plugin để hiển thị text ở giữa
             const centerTextPlugin = {
                 id: 'centerText',
                 afterDraw: (chart) => {
@@ -330,11 +388,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     ctx.fillStyle = '#000';
                     const score = result.evaluation.overallScore;
                     const scoreWidth = ctx.measureText(score).width;
-                    
-                    // Vẽ điểm số và /9 ngang hàng với khoảng cách lớn hơn
+
                     ctx.fillText(score, centerX - scoreWidth, centerY);
                     ctx.font = '50px Arial';
-                    ctx.fillText('/9', centerX + scoreWidth/2, centerY);
+                    ctx.fillText('/9', centerX + scoreWidth/1.5, centerY);
                     
                     ctx.restore();
                 }
@@ -365,13 +422,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 plugins: [centerTextPlugin]
             });
             
-            // Disable textarea và cập nhật nút nộp bài
             document.getElementById('userInput').disabled = true;
             submitButton.innerHTML = 'Đã nộp';
             submitButton.classList.remove('btn-success');
             submitButton.classList.add('btn-secondary');
         } catch (error) {
-            // Khôi phục nút về trạng thái ban đầu nếu có lỗi
             submitButton.innerHTML = originalButtonText;
             submitButton.disabled = false;
             alert('Có lỗi xảy ra khi đánh giá bài viết: ' + error.message);
