@@ -20,11 +20,14 @@
                 <option value="hard">Khó</option>
             </select>
             <select class="form-select d-none" id="ieltsLevel">
-                <option value="5.5 - 6.0">Band 5.0-Band 6.0</option>
-                <option value="6.0 - 6.5">Band 6.0-Band 6.5</option>
-                <option value="6.5 - 7.5">Band 6.5-Band 7.5</option>
-                <option value="7.5 - 8.5">Band 7.5-Band 8.5</option>
-                <option value="8.5 - 9.0">Band 8.5-Band 9.0</option>
+                <option value="5.5">Band 5.5</option>
+                <option value="6.0">Band 6.0</option>
+                <option value="6.5">Band 6.5</option>
+                <option value="7.0">Band 7.0</option>
+                <option value="7.5">Band 7.5</option>
+                <option value="8.0">Band 8.0</option>
+                <option value="8.5">Band 8.5</option>
+                <option value="9.0">Band 9.0</option>
             </select>
         </div>
     </div>
@@ -104,9 +107,8 @@ document.getElementById('generateTemplate').addEventListener('click', async () =
         sessionStorage.setItem('templateOptions', JSON.stringify(options));
         window.location.href = '/writing-practice/template';
     } catch (error) {
-        console.log('2 Không thể tạo mẫu câu. Vui lòng thử lại.');
         console.error('Error:', error);
-        alert('2 Không thể tạo mẫu câu. Vui lòng thử lại.');
+        alert('Không thể tạo mẫu câu. Vui lòng thử lại.');
         
         button.disabled = false;
         spinner.classList.add('d-none');

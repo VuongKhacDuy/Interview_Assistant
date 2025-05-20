@@ -66,4 +66,44 @@ document.getElementById('generateTopic').addEventListener('click', async () => {
         buttonText.textContent = 'Tạo chủ đề';
     }
 });
+
+document.getElementById('generateTemplate').addEventListener('click', async () => {
+    const button = document.getElementById('generateTemplate');
+    const spinner = document.getElementById('templateSpinner');
+    const buttonText = document.getElementById('templateButtonText');
+
+    button.disabled = true;
+    spinner.classList.remove('d-none');
+    buttonText.textContent = 'Đang tạo mẫu câu...';
+
+    const options = {
+        type: document.getElementById('templateType').value,
+        difficulty: document.getElementById('difficultyLevel').value,
+        topic: document.getElementById('topicType').value
+    };
+
+    try {
+        const response = await fetch('/writing-practice/generate-template', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(options)
+        });
+
+        if (!response.ok) throw new Error('Failed to generate template');
+        
+        const data = await response.json();
+        sessionStorage.setItem('writingTemplate', JSON.stringify(data));
+        sessionStorage.setItem('templateOptions', JSON.stringify(options));
+        window.location.href = '/writing-practice/template';
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Không thể tạo mẫu câu. Vui lòng thử lại.');
+        
+        button.disabled = false;
+        spinner.classList.add('d-none');
+        buttonText.textContent = 'Tạo mẫu câu';
+    }
+});
 </script>

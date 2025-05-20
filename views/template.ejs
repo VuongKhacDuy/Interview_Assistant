@@ -16,7 +16,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-6">
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
@@ -30,63 +30,7 @@
                 </div>
             </div>
         </div>
-
-        <!-- Thêm vào phần script -->
-        <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const template = JSON.parse(sessionStorage.getItem('writingTemplate'));
-            const templateContent = document.getElementById('templateContent');
-            const sentenceDetails = document.getElementById('sentenceDetails');
-            const grammarDetails = document.getElementById('grammarDetails');
-            const vocabularyDetails = document.getElementById('vocabularyDetails');
-            const sentenceSuggestion = document.getElementById('sentenceSuggestion');
-            const grammarSuggestion = document.getElementById('grammarSuggestion');
-            const vocabularySuggestion = document.getElementById('vocabularySuggestion');
         
-            if (template && template.text) {
-                const sentences = template.sentences;
-                templateContent.innerHTML = template.text.split('.').map((sentence, index) => {
-                    if (sentence.trim()) {
-                        return `<span class="sentence" data-index="${index}">${sentence.trim()}.</span> `;
-                    }
-                    return '';
-                }).join('');
-                
-                document.querySelectorAll('.sentence').forEach((element, index) => {
-                    element.style.cursor = 'pointer';
-                    element.addEventListener('click', () => {
-                        if (sentences[index]) {
-                            sentenceSuggestion.textContent = sentences[index].suggestion;
-                            grammarSuggestion.textContent = sentences[index].grammar || 'Không có gợi ý ngữ pháp cho câu này';
-                            vocabularySuggestion.textContent = sentences[index].vocabulary || 'Không có gợi ý từ vựng cho câu này';
-                            
-                            sentenceDetails.classList.remove('d-none');
-                            grammarDetails.classList.remove('d-none');
-                            vocabularyDetails.classList.remove('d-none');
-                        }
-                    });
-                });
-            }
-        
-            // Xử lý nút nộp bài
-            document.getElementById('submitWriting').addEventListener('click', function() {
-                const userInput = document.getElementById('userInput').value;
-                if (!userInput.trim()) {
-                    alert('Vui lòng nhập bài viết của bạn trước khi nộp!');
-                    return;
-                }
-        
-                // Dừng đồng hồ
-                if (timerInterval) {
-                    clearInterval(timerInterval);
-                }
-        
-                // TODO: Thêm logic xử lý nộp bài ở đây
-                // Có thể gửi thời gian làm bài (timerElement.textContent) cùng với bài viết
-            });
-        });
-        </script>
-
         <!-- Thêm vào phần style -->
         <style>
         .timer-container {
@@ -98,71 +42,7 @@
             font-size: 1.2em;
         }
         </style>
-        <!-- Thêm vào phần script -->
-        <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const template = JSON.parse(sessionStorage.getItem('writingTemplate'));
-            const templateContent = document.getElementById('templateContent');
-            const sentenceDetails = document.getElementById('sentenceDetails');
-            const grammarDetails = document.getElementById('grammarDetails');
-            const vocabularyDetails = document.getElementById('vocabularyDetails');
-            const sentenceSuggestion = document.getElementById('sentenceSuggestion');
-            const grammarSuggestion = document.getElementById('grammarSuggestion');
-            const vocabularySuggestion = document.getElementById('vocabularySuggestion');
-        
-            if (template && template.text) {
-                const sentences = template.sentences;
-                templateContent.innerHTML = template.text
-                    .split('\n') // Tách theo dòng trước
-                    .map(paragraph => {
-                        if (paragraph.trim()) {
-                            return `<p>${paragraph.split('.').map((sentence, index) => {
-                                if (sentence.trim()) {
-                                    return `<span class="sentence" data-index="${index}">${sentence.trim()}.</span>`;
-                                }
-                                return '';
-                            }).join(' ')}</p>`;
-                        }
-                        return '';
-                    })
-                    .join('');
-                
-                document.querySelectorAll('.sentence').forEach((element, index) => {
-                    element.style.cursor = 'pointer';
-                    element.addEventListener('click', () => {
-                        if (sentences[index]) {
-                            sentenceSuggestion.textContent = sentences[index].suggestion;
-                            grammarSuggestion.textContent = sentences[index].grammar || 'Không có gợi ý ngữ pháp cho câu này';
-                            vocabularySuggestion.textContent = sentences[index].vocabulary || 'Không có gợi ý từ vựng cho câu này';
-                            
-                            sentenceDetails.classList.remove('d-none');
-                            grammarDetails.classList.remove('d-none');
-                            vocabularyDetails.classList.remove('d-none');
-                        }
-                    });
-                });
-            }
-        
-            // Xử lý nút nộp bài
-            document.getElementById('submitWriting').addEventListener('click', function() {
-                const userInput = document.getElementById('userInput').value;
-                if (!userInput.trim()) {
-                    alert('Vui lòng nhập bài viết của bạn trước khi nộp!');
-                    return;
-                }
-        
-                // Dừng đồng hồ
-                if (timerInterval) {
-                    clearInterval(timerInterval);
-                }
-        
-                // TODO: Thêm logic xử lý nộp bài ở đây
-                // Có thể gửi thời gian làm bài (timerElement.textContent) cùng với bài viết
-            });
-        });
-        </script>
 
-        <!-- Thêm vào phần style -->
         <style>
         .timer-container {
             font-size: 1.1em;
@@ -215,64 +95,6 @@
     </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const template = JSON.parse(sessionStorage.getItem('writingTemplate'));
-    const templateContent = document.getElementById('templateContent');
-    const sentenceDetails = document.getElementById('sentenceDetails');
-    const grammarDetails = document.getElementById('grammarDetails');
-    const vocabularyDetails = document.getElementById('vocabularyDetails');
-    const sentenceSuggestion = document.getElementById('sentenceSuggestion');
-    const grammarSuggestion = document.getElementById('grammarSuggestion');
-    const vocabularySuggestion = document.getElementById('vocabularySuggestion');
-
-    if (template && template.text) {
-        const sentences = template.sentences;
-        templateContent.innerHTML = template.text.split('.').map((sentence, index) => {
-            if (sentence.trim()) {
-                return `<span class="sentence" data-index="${index}">${sentence.trim()}.</span> `;
-            }
-            return '';
-        }).join('');
-
-        
-        console.log("template: ", template);
-        console.log("templateContent: ", templateContent);
-        console.log("sentenceDetails: ", sentenceDetails);
-        console.log("grammarDetails: ", grammarDetails);
-        console.log("vocabularyDetails: ", vocabularyDetails);
-        console.log("sentenceSuggestion: ", sentenceSuggestion);
-        console.log("grammarSuggestion: ", grammarSuggestion);
-        console.log("vocabularySuggestion: ", vocabularySuggestion);
-        
-        document.querySelectorAll('.sentence').forEach((element, index) => {
-            element.style.cursor = 'pointer';
-            element.addEventListener('click', () => {
-                if (sentences[index]) {
-                    sentenceSuggestion.textContent = sentences[index].suggestion;
-                    grammarSuggestion.textContent = sentences[index].grammar || 'Không có gợi ý ngữ pháp cho câu này';
-                    vocabularySuggestion.textContent = sentences[index].vocabulary || 'Không có gợi ý từ vựng cho câu này';
-                    
-                    sentenceDetails.classList.remove('d-none');
-                    grammarDetails.classList.remove('d-none');
-                    vocabularyDetails.classList.remove('d-none');
-                }
-            });
-        });
-    }
-
-    // Xử lý nút nộp bài
-    document.getElementById('submitWriting').addEventListener('click', function() {
-        const userInput = document.getElementById('userInput').value;
-        if (!userInput.trim()) {
-            alert('Vui lòng nhập bài viết của bạn trước khi nộp!');
-            return;
-        }
-        // TODO: Thêm logic xử lý nộp bài ở đây
-    });
-});
-</script>
-
 <style>
 .sentence:hover {
     background-color: #37be86;
@@ -302,6 +124,21 @@ document.addEventListener('DOMContentLoaded', function() {
     font-size: 1.1em;
     line-height: 1.6;
     resize: vertical;
+}
+</style>
+
+<style>
+.evaluation-results {
+    animation: fadeIn 0.5s ease-in;
+}
+
+.evaluation-results .card {
+    border-left: 4px solid #28a745;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 </style>
 
@@ -360,21 +197,185 @@ document.addEventListener('DOMContentLoaded', function() {
     timerInterval = setInterval(updateTimer, 1000);
     updateTimer();
 
+    // Thêm link CDN Chart.js vào đầu file
+    const chartScript = document.createElement('script');
+    chartScript.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+    document.head.appendChild(chartScript);
+
     // Xử lý nút nộp bài
-    document.getElementById('submitWriting').addEventListener('click', function() {
+    document.getElementById('submitWriting').addEventListener('click', async function() {
         const userInput = document.getElementById('userInput').value;
         if (!userInput.trim()) {
             alert('Vui lòng nhập bài viết của bạn trước khi nộp!');
             return;
         }
 
+        // Hiển thị trạng thái loading
+        const submitButton = document.getElementById('submitWriting');
+        const originalButtonText = submitButton.innerHTML;
+        submitButton.innerHTML = `
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            Đang đánh giá...
+        `;
+        submitButton.disabled = true;
+
         // Dừng đồng hồ
         if (timerInterval) {
             clearInterval(timerInterval);
         }
 
-        // TODO: Thêm logic xử lý nộp bài ở đây
-        // Có thể gửi thời gian làm bài (timerElement.textContent) cùng với bài viết
+        // Lấy thông tin template và thời gian làm bài
+        const template = JSON.parse(sessionStorage.getItem('writingTemplate'));
+        const timeSpent = timerElement.textContent;
+
+        try {
+            // Gửi request đến server để đánh giá bài viết
+            const response = await fetch('/writing-practice/evaluate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    topic: template.topic,
+                    content: userInput,
+                    options: {
+                        type: template.type,
+                        timeSpent: timeSpent
+                    }
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Không thể đánh giá bài viết');
+            }
+
+            const result = await response.json();
+            
+            // Tạo HTML cho kết quả đánh giá
+            const evaluationHtml = `
+                <div class="row mt-4 evaluation-results">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0">Kết quả đánh giá</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="text-center">
+                                            <canvas id="overallScoreChart" width="170" height="170"></canvas>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6>Điểm số:</h6>
+                                        <ul class="list-unstyled">
+                                            <li>Task Achievement: ${result.evaluation.taskAchievement.score}/9</li>
+                                            <li>Coherence: ${result.evaluation.coherenceAndCohesion.score}/9</li>
+                                            <li>Lexical Resource: ${result.evaluation.lexicalResource.score}/9</li>
+                                            <li>Grammar: ${result.evaluation.grammaticalAccuracy.score}/9</li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6>Thời gian làm bài:</h6>
+                                        <p>${timeSpent}</p>
+                                        <h6>Số từ:</h6>
+                                        <p>${result.evaluation.wordCount} từ</p>
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <h6>Điểm mạnh:</h6>
+                                    <ul>
+                                        ${result.evaluation.strengths.map(s => `<li>${s}</li>`).join('')}
+                                    </ul>
+                                </div>
+                                <div class="mt-3">
+                                    <h6>Điểm yếu:</h6>
+                                    <ul>
+                                        ${result.evaluation.weaknesses.map(w => `<li>${w}</li>`).join('')}
+                                    </ul>
+                                </div>
+                                <div class="mt-3">
+                                    <h6>Gợi ý cải thiện:</h6>
+                                    <ul>
+                                        ${result.evaluation.suggestions.map(s => `<li>${s}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Thay vì chèn vào userInputCard, chèn vào sau các button
+            const buttonRow = document.querySelector('.row.mt-3');
+            buttonRow.insertAdjacentHTML('afterend', evaluationHtml);
+
+            // Tạo pie chart cho overall score
+            const ctx = document.getElementById('overallScoreChart').getContext('2d');
+            
+            // Plugin để hiển thị text ở giữa
+            const centerTextPlugin = {
+                id: 'centerText',
+                afterDraw: (chart) => {
+                    const { ctx, chartArea: { left, right, top, bottom } } = chart;
+                    const centerX = (left + right) / 2;
+                    const centerY = (top + bottom) / 2;
+
+                    ctx.save();
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    
+                    // Vẽ điểm số
+                    ctx.font = 'bold 40px Arial';
+                    ctx.fillStyle = '#000';
+                    const score = result.evaluation.overallScore;
+                    const scoreWidth = ctx.measureText(score).width;
+                    
+                    // Vẽ điểm số và /9 ngang hàng với khoảng cách lớn hơn
+                    ctx.fillText(score, centerX - scoreWidth, centerY);
+                    ctx.font = '50px Arial';
+                    ctx.fillText('/9', centerX + scoreWidth/2, centerY);
+                    
+                    ctx.restore();
+                }
+            };
+            
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [result.evaluation.overallScore, 9 - result.evaluation.overallScore],
+                        backgroundColor: ['#28a745', '#e9ecef']
+                    }]
+                },
+                options: {
+                    cutout: '70%',
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            enabled: false
+                        },
+                        centerText: true
+                    }
+                },
+                plugins: [centerTextPlugin]
+            });
+            
+            // Disable textarea và cập nhật nút nộp bài
+            document.getElementById('userInput').disabled = true;
+            submitButton.innerHTML = 'Đã nộp';
+            submitButton.classList.remove('btn-success');
+            submitButton.classList.add('btn-secondary');
+        } catch (error) {
+            // Khôi phục nút về trạng thái ban đầu nếu có lỗi
+            submitButton.innerHTML = originalButtonText;
+            submitButton.disabled = false;
+            alert('Có lỗi xảy ra khi đánh giá bài viết: ' + error.message);
+        }
     });
 });
 </script>
