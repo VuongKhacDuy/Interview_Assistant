@@ -170,23 +170,34 @@ document.addEventListener('DOMContentLoaded', () => {
             const safeUpdateList = (elementId, items = []) => {
                 const list = document.getElementById(elementId);
                 if (list) {
-                    list.innerHTML = items.map(item => `<li>${item}</li>`).join('');
+                    // Kiểm tra nếu items là mảng các object
+                    if (items && items.length > 0 && typeof items[0] === 'object') {
+                        // Xử lý mảng object
+                        list.innerHTML = items.map(item => `<li>${JSON.stringify(item)}</li>`).join('') || '';
+                    } else {
+                        // Xử lý mảng string thông thường
+                        list.innerHTML = items && items.length > 0 
+                            ? items.map(item => `<li>${item}</li>`).join('')
+                            : '<li></li>';
+                    }
                 }
             };
-    
+
             safeUpdateList('strengthsList', evaluation.strengths);
             safeUpdateList('weaknessesList', evaluation.weaknesses);
             safeUpdateList('suggestionsList', evaluation.suggestions);
-    
-            safeUpdateElement('wordCountResult', evaluation.wordCount || 0);
-            safeUpdateElement('detailedFeedback', evaluation.detailedFeedback || '');
-
             safeUpdateList('improveWordsList', evaluation.suggestedImproveWords);
             safeUpdateList('improveSentencesList', evaluation.suggestedImproveSentences);
-            safeUpdateList('improveParagraphsList', evaluation.suggestedImproveParagraphs);
             safeUpdateList('synonymsList', evaluation.suggestedSymnonyms);
             safeUpdateList('antonymsList', evaluation.suggestedAntonyms);
-    
+            safeUpdateList('wayToFixWrongSentencesList', evaluation.wayToFixWrongSentences);
+            safeUpdateList('explanationsWrongSentencesList', evaluation.explanationsWrongSentences);
+            safeUpdateList('wrongSentencesList', evaluation.wrongSentences);
+            const words = countWords(writingContent.value);
+            const numberOfWords = `${words}/${options.wordCount}`;
+            safeUpdateElement('wordCountResult', numberOfWords || 0);
+            safeUpdateElement('detailedFeedback', evaluation.detailedFeedback || 'Không có phản hồi chi tiết');
+
             sessionStorage.setItem('writingResult', JSON.stringify(evaluation));
         } catch (error) {
             console.error('Error:', error);
