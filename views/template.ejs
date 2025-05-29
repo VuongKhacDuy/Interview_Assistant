@@ -148,29 +148,6 @@
 }
 </style>
 
-<style>
-#evaluation {
-    background-color: #f8f9fa;
-    padding: 20px;
-    border-radius: 8px;
-    margin-top: 2rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-#evaluation h5 {
-    color: #2c3e50;
-    margin-bottom: 1rem;
-}
-
-#evaluation ul {
-    margin-bottom: 1.5rem;
-}
-
-#evaluation ul:last-child {
-    margin-bottom: 0;
-}
-</style>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const template = JSON.parse(sessionStorage.getItem('writingTemplate'));
@@ -475,15 +452,3 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-
-<!-- Thêm vào phần evaluation -->
-<div id="evaluation" class="mt-4" style="display: none;">
-    <h5>Các câu sai cần sửa:</h5>
-    <ul id="wrongSentencesList"></ul>
-    
-    <h5>Cách sửa câu sai:</h5>
-    <ul id="wayToFixWrongSentencesList"></ul>
-    
-    <h5>Giải thích lỗi sai:</h5>
-    <ul id="explanationsWrongSentencesList"></ul>
-</div>
